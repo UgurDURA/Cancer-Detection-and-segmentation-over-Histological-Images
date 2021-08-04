@@ -4,15 +4,18 @@ import matplotlib.pyplot as plt
 import os
  
 
-images = np.load(r'C:\Users\ugur_\OneDrive\Masaüstü\Projects\Cancer-Detection-and-segmentation-over-Histological-Images\Cancer-Detection-and-segmentation-over-Histological-Images\imageExamples.npy')
-masks=np.load(r'C:\Users\ugur_\OneDrive\Masaüstü\Projects\Cancer-Detection-and-segmentation-over-Histological-Images\Cancer-Detection-and-segmentation-over-Histological-Images\maskExamples.npy')
+images = np.load(r'D:\Software Senior Project[DATA]\fold_1\Fold 1\images\fold1\images.npy')
+masks=np.load(r'D:\Software Senior Project[DATA]\fold_1\Fold 1\masks\fold1\masks.npy')
 images=images.astype(int)
 masks=masks.astype(int)
+
+
+"Data seperation (Seperated into 5 instances"
 
 # imageExampels=[]
 # maskExampels=[]
 
-# for i in range(100):
+# for i in range(5):
 #     imageExampels.append(images[i])
 #     maskExampels.append(masks[i])
 
@@ -22,19 +25,26 @@ masks=masks.astype(int)
 # np.save('maskExamples', maskExampels)
 
 
+
+"Plotting over a graph"
 # plt.imshow(images[0])
 # plt.imshow(masks[0])
 # plt(images[0])
 # plt(masks[0])
 
 
+"Saving the images whichs are overplotted"
 
-for i in range (1):
-    plt.imshow(images[i])
-    plt.imshow(masks[i])
-    imagename='images'+str(i)+'.png'
-    plt.savefig(imagename)
+
+# for i in range (1):
+#     plt.imshow(images[i])
+#     plt.imshow(masks[i])
+#     imagename='images'+str(i)+'.png'
+#     plt.savefig(imagename)
     
+
+"Check how is looks like "
 
 plt.show()
 
+"PS. Izbanda kodlama queyfie"
