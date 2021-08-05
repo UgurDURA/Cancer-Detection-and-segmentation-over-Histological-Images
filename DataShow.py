@@ -9,7 +9,7 @@ import argparse
 images = np.load(r'C:\Users\90534\Desktop\YBitirme\Cancer-Detection-and-segmentation-over-Histological-Images\imageExamples.npy')
 masks=np.load(r'C:\Users\90534\Desktop\YBitirme\Cancer-Detection-and-segmentation-over-Histological-Images\maskExamples.npy')
 images=images.astype(int)
-masks=masks.astype(float)
+masks=masks.astype(int)
 
 "Plotting over a graph"
 #plt.imshow(images[0])
@@ -18,14 +18,17 @@ masks=masks.astype(float)
 #plt(masks[0])
 
 npp, inf, stc, dc, epi, bg  = np.split(masks[0], 6, axis=2) #256x256
-m1 = np.concatenate((npp,npp,npp), axis=2)
-m2 = np.concatenate((inf, inf,inf), axis=2)
+m1 = cv2.merge([npp,npp,npp])
+m2 = cv2.merge([inf, inf,inf])
 m3 = np.concatenate((stc,stc,stc), axis=2)
 m4 = np.concatenate((dc,dc,dc), axis=2)
 m5 = np.concatenate((epi,epi,epi), axis=2)
 m6 = np.concatenate((bg,bg,bg), axis=2)
-plt.imshow(masked)
-plt.show()
+r, g, b = np.split(images[0], 3 , axis=2)
+newimage = cv2.merge([r, g, b])
+masked = cv2.bitwise_and(newimage, m1)
+cv2.imshow("masked", newimage)
+cv2.waitKey()
 
 "Saving the images whichs are overplotted"
 
