@@ -1,82 +1,66 @@
 import numpy as np # linear algebra
-import pandas as pd # data processing, CSV file I/O (e.g. pd.read_csv)
 import matplotlib.pyplot as plt
-import os
-import cv2
-import argparse
- 
 
-images = np.load(r'C:\Users\90534\Desktop\YBitirme\Cancer-Detection-and-segmentation-over-Histological-Images\imageExamples.npy')
-masks=np.load(r'C:\Users\90534\Desktop\YBitirme\Cancer-Detection-and-segmentation-over-Histological-Images\maskExamples.npy')
+
+images = np.load(r'C:\Users\90534\Desktop\YBitirme\Cancer-Detection-and-segmentation-over-Histological-Images\images.npy')
+masks=np.load(r'C:\Users\90534\Desktop\YBitirme\Cancer-Detection-and-segmentation-over-Histological-Images\masks.npy')
 images=images.astype(int)
 masks=masks.astype(int)
 
-npp, inf, stc, dc, epi, bg  = np.split(masks[0], 6, axis=2) #256x256 #uint8'e çevir!
+for i in range(100):
+    npp, inf, stc, dc, epi, bg = np.split(masks[i], 6, axis=2) #256x256 #uint8'e çevir!
 
-img = np.asarray(images[0], dtype=np.uint8)
+    r, g, b = np.split(images[i], 3, axis=2)
+    npp = (npp > 0)
+    inf = (inf > 0)
+    stc = (stc > 0)
+    dc = (dc > 0)
+    epi = (epi > 0)
+    bg = (bg > 0)
 
-m1 = np.concatenate((npp,npp,npp), axis=2)
-m1int = np.asarray(m1, dtype=np.uint8)
+    b1 = np.concatenate((np.multiply(r,npp), np.multiply(g,npp), np.multiply(b,npp)), axis=2)
+    b2 = np.concatenate((np.multiply(r,inf), np.multiply(g,inf), np.multiply(b,inf)), axis=2)
+    b3 = np.concatenate((np.multiply(r,stc), np.multiply(g,stc), np.multiply(b,stc)), axis=2)
+    b4 = np.concatenate((np.multiply(r,dc), np.multiply(g,dc), np.multiply(b,dc)), axis=2)
+    b5 = np.concatenate((np.multiply(r,epi), np.multiply(g,epi), np.multiply(b,epi)), axis=2)
+    b6 = np.concatenate((np.multiply(r,bg), np.multiply(g,bg), np.multiply(b,bg)), axis=2)
 
-m2 = np.concatenate((inf, inf,inf),axis=2)
-m2int = np.asarray(m2, dtype=np.uint8)
+    try3 = np.add(b1,np.add(b2,np.add(b3,np.add(b4,np.add(b5,b6)))))
 
-m3 = np.concatenate((stc,stc,stc), axis=2)
-m3int = np.asarray(m3, dtype=np.uint8)
 
-m4 = np.concatenate((dc,dc,dc), axis=2)
-m4int = np.asarray(m4, dtype=np.uint8)
+    fig = plt.figure()
+    ax1 = fig.add_subplot(2,4,1)
+    ax1.imshow(b1)
+    plt.title("Neoplastic Cells")
 
-m5 = np.concatenate((epi,epi,epi), axis=2)
-m5int = np.asarray(m5, dtype=np.uint8)
+    ax2 = fig.add_subplot(2,4,2)
+    ax2.imshow(b2)
+    plt.title("Inflammatory")
 
-m6 = np.concatenate((bg,bg,bg), axis=2)
-m6int = np.asarray(m6, dtype=np.uint8)
+    ax3 = fig.add_subplot(2,4,3)
+    ax3.imshow(b3)
+    plt.title("Connective/Soft Tissue Cells")
 
-mmm1 = np.multiply(m1int,img)
-mmm2 = np.multiply(m2int,img)
-mmm3 = np.multiply(m3int,img)
-mmm4 = np.multiply(m4int,img)
-mmm5 = np.multiply(m5int,img)
-mmm6 = np.multiply(m6int,img)
+    ax4 = fig.add_subplot(2,4,4)
+    ax4.imshow(b4)
+    plt.title("Dead Cells")
 
-m = np.multiply(mmm1,np.multiply(mmm2,np.multiply(mmm3,np.multiply(mmm4,np.multiply(mmm5,np.multiply(mmm6,img))))))
-mm = np.add(m,mmm6)
+    ax5 = fig.add_subplot(2,4,5)
+    ax5.imshow(b5)
+    plt.title("Epithelial")
 
-masked = np.add(mmm1,np.add(mmm2,np.add(mmm3,np.add(mmm4,np.add(mmm5,mmm6)))))
+    ax6 = fig.add_subplot(2,4,6)
+    ax6.imshow(b6)
+    plt.title("Background")
 
-fig = plt.figure()
-ax1 = fig.add_subplot(2,4,1)
-ax1.imshow(np.add(mmm1,img))
-plt.title("mask1")
+    ax7 = fig.add_subplot(2,4,7)
+    ax7.imshow(try3)
+    plt.title("all masks summed")
 
-ax2 = fig.add_subplot(2,4,2)
-ax2.imshow(np.add(mmm2,img))
-plt.title("mask2")
+    ax8 = fig.add_subplot(2,4,8)
+    ax8.imshow(images[i])
+    plt.title("original")
 
-ax3 = fig.add_subplot(2,4,3)
-ax3.imshow(np.add(mmm3,img))
-plt.title("mask3")
-
-ax4 = fig.add_subplot(2,4,4)
-ax4.imshow(np.add(mmm4,img))
-plt.title("mask4")
-
-ax5 = fig.add_subplot(2,4,5)
-ax5.imshow(np.add(mmm5,img))
-plt.title("mask5")
-
-ax6 = fig.add_subplot(2,4,6)
-ax6.imshow(mmm6)
-plt.title("mask6 (background)")
-
-ax7 = fig.add_subplot(2,4,7)
-ax7.imshow(mm)
-plt.title("all masks in order")
-
-ax8 = fig.add_subplot(2,4,8)
-ax8.imshow(masked)
-plt.title("all masks added")
-
-fig.show()
-plt.show()
+    figure = plt.gcf()  # get current figure
+    figure.set_size_inches(32, 18)
+    plt.savefig(str(i)+ ".png", bbox_inches="tight")
