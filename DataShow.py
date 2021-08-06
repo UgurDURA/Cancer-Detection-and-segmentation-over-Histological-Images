@@ -3,9 +3,11 @@ import matplotlib.pyplot as plt
 
 
 images = np.load(r'C:\Users\90534\Desktop\YBitirme\Cancer-Detection-and-segmentation-over-Histological-Images\images.npy')
-masks=np.load(r'C:\Users\90534\Desktop\YBitirme\Cancer-Detection-and-segmentation-over-Histological-Images\masks.npy')
-images=images.astype(int)
-masks=masks.astype(int)
+masks = np.load(r'C:\Users\90534\Desktop\YBitirme\Cancer-Detection-and-segmentation-over-Histological-Images\masks.npy')
+types = np.load(r'C:\Users\90534\Desktop\YBitirme\Cancer-Detection-and-segmentation-over-Histological-Images\types.npy')
+images = images.astype(int)
+masks = masks.astype(int)
+types = types.astype(str)
 
 for i in range(100):
     npp, inf, stc, dc, epi, bg = np.split(masks[i], 6, axis=2) #256x256 #uint8'e çevir!
@@ -60,6 +62,9 @@ for i in range(100):
     ax8 = fig.add_subplot(2,4,8)
     ax8.imshow(images[i])
     plt.title("original")
+
+    plt.suptitle(types[i], fontsize=24)
+
 
     figure = plt.gcf()  # get current figure
     figure.set_size_inches(32, 18)
