@@ -1,18 +1,30 @@
 import numpy as np # linear algebra
 import matplotlib.pyplot as plt
+import os
 
+# give paths to data and open images, masks and types npy files
+images = np.load(r'D:\Proje.Yazılım\not_github\file1_extracted\images.npy')
+masks = np.load(r'D:\Proje.Yazılım\not_github\file1_extracted\masks.npy')
+ty = np.load(r'D:\Proje.Yazılım\not_github\file1_extracted\types.npy')
 
-images = np.load(r'C:\Users\90534\Desktop\YBitirme\Cancer-Detection-and-segmentation-over-Histological-Images\images.npy')
-masks = np.load(r'C:\Users\90534\Desktop\YBitirme\Cancer-Detection-and-segmentation-over-Histological-Images\masks.npy')
-types = np.load(r'C:\Users\90534\Desktop\YBitirme\Cancer-Detection-and-segmentation-over-Histological-Images\types.npy')
+# saving path that will make new files
+path = "D:/Proje.Yazılım/not_github/1_categorised/"
+
+# specify input types in npy files
 images = images.astype(int)
 masks = masks.astype(int)
-types = types.astype(str)
+ty = ty.astype(str)
 
-for i in range(100):
+# loop to extract data accordingly
+for i in range(500, 1500):
+
+    # separate each mask
     npp, inf, stc, dc, epi, bg = np.split(masks[i], 6, axis=2) #256x256 #uint8'e çevir!
 
+    # separate each channel
     r, g, b = np.split(images[i], 3, axis=2)
+
+    # turn masks to binary
     npp = (npp > 0)
     inf = (inf > 0)
     stc = (stc > 0)
@@ -20,6 +32,7 @@ for i in range(100):
     epi = (epi > 0)
     bg = (bg > 0)
 
+    # masking
     b1 = np.concatenate((np.multiply(r,npp), np.multiply(g,npp), np.multiply(b,npp)), axis=2)
     b2 = np.concatenate((np.multiply(r,inf), np.multiply(g,inf), np.multiply(b,inf)), axis=2)
     b3 = np.concatenate((np.multiply(r,stc), np.multiply(g,stc), np.multiply(b,stc)), axis=2)
@@ -27,9 +40,12 @@ for i in range(100):
     b5 = np.concatenate((np.multiply(r,epi), np.multiply(g,epi), np.multiply(b,epi)), axis=2)
     b6 = np.concatenate((np.multiply(r,bg), np.multiply(g,bg), np.multiply(b,bg)), axis=2)
 
+    # sum all the images to compare with the original
     try3 = np.add(b1,np.add(b2,np.add(b3,np.add(b4,np.add(b5,b6)))))
 
 
+
+    # plotting
     fig = plt.figure()
     ax1 = fig.add_subplot(2,4,1)
     ax1.imshow(b1)
@@ -63,9 +79,18 @@ for i in range(100):
     ax8.imshow(images[i])
     plt.title("original")
 
-    plt.suptitle(types[i], fontsize=24)
-
+    plt.suptitle(ty[i], fontsize=24)
 
     figure = plt.gcf()  # get current figure
     figure.set_size_inches(32, 18)
-    plt.savefig(str(i)+ ".png", bbox_inches="tight")
+
+    # creating files with the type if not exists
+    os.chdir(path)
+    if not os.path.exists(ty[i]):
+        os.makedirs(ty[i])
+
+    # save file to corresponding file
+    os.chdir(path + ty[i])
+    plt.savefig(ty[i] + "_" + str(i) + ".png", bbox_inches="tight")
+    plt.close('all')
+    print(ty[i] + "_" + str(i) + ".png")
