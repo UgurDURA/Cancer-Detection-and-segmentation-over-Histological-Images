@@ -142,9 +142,5 @@ public class CameraFragment extends Fragment {
         return Base64.encodeToString(imageArr, Base64.URL_SAFE);
 
     }
-
-
-
-
-
+    
 }
