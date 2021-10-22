@@ -2,8 +2,8 @@ clc
 close all
 clear all
 
-im1 = imread("10_oppo.jpg");
-saveas(histogram_extracted(im1,"10 oppo.jpg") ,"Result_10_oppo.png");
+im1 = imread("10_oppo.jpg"); % read image 
+saveas(histogram_extracted(im1,"10 oppo.jpg") ,"Result_10_oppo.png"); % call the function and save the results as a .png file
 
 im2 = imread("20_oppo.jpg");
 saveas(histogram_extracted(im2, "20 oppo.jpg"),"Result_20_oppo.png");
