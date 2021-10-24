@@ -15,6 +15,13 @@ import android.util.Log;
 import android.view.MotionEvent;
 import android.view.SurfaceView;
 import android.view.View;
+import android.widget.Toast;
+
+import java.io.DataInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.ServerSocket;
+import java.net.Socket;
 
 /** Provides support for the surface used for the preview, using a SurfaceView.
  */
@@ -50,6 +57,65 @@ public class MySurfaceView extends SurfaceView implements CameraSurface {
             }
         };
     }
+
+     public class MyServerFeeder implements Runnable
+     {
+         ServerSocket ss;
+         Socket s;
+         DataInputStream dis;
+         int len;
+         byte[] data;
+
+
+         @Override
+         public void run() {
+
+
+                 try {
+                     ss = new ServerSocket(9999);
+                 } catch (IOException e) {
+                     e.printStackTrace();
+                 }
+                 handler.post(()->
+                 {
+                     Toast.makeText(getContext().getApplicationContext(), "Listening", Toast.LENGTH_LONG).show();
+                 });
+
+                 while(true)
+                 {
+                     try {
+                         s = ss.accept();
+                     } catch (IOException e) {
+                         e.printStackTrace();
+                     }
+                     InputStream in = null;
+                     try {
+                         in = s.getInputStream();
+                     } catch (IOException e) {
+                         e.printStackTrace();
+                     }
+                     dis = new DataInputStream(in);
+
+                     try {
+                         len = dis.readInt();
+                     } catch (IOException e) {
+                         e.printStackTrace();
+                     }
+                     data = new byte[len];
+                     if(len > 0)
+                     {
+                         try {
+                             dis.readFully(data, 0, data.length);
+                         } catch (IOException e) {
+                             e.printStackTrace();
+                         }
+
+                     }
+                 }
+             }
+
+         }
+     }
 
     @Override
     public View getView() {
