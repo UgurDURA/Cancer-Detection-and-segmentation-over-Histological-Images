@@ -12,7 +12,10 @@ import android.graphics.ImageFormat;
 import android.hardware.Camera;
 import android.media.tv.TvContract;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
@@ -20,6 +23,7 @@ import android.view.Window;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import java.io.IOException;
 import java.net.DatagramPacket;
@@ -32,7 +36,7 @@ import java.util.List;
 
 public class MainActivity extends Activity implements SurfaceHolder.Callback, Camera.PreviewCallback {
 
-
+    private final static String TAG = MainActivity.class.getSimpleName();
 
     Camera camera;
     SurfaceHolder previewHolder;
@@ -115,7 +119,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback, Ca
                     @Override
                     public void onClick(View v)
                     {
-                        //showSettingsDlg();
+                        showSettingsDlg();
                     }
                 });
 
@@ -128,11 +132,11 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback, Ca
                         if (isStreaming)
                         {
                             ((Button)v).setText("Stream");
-                            //stopStream();
+                            stopStream();
                         }
                         else
                         {
-                            //showStreamDlg();
+                            showStreamDlg();
                         }
                     }
                 });
@@ -143,24 +147,270 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback, Ca
 
     }
 
-
     @Override
-    public void onPreviewFrame(byte[] data, Camera camera) {
+    protected void onPause()
+    {
+        this.stopStream();
 
+
+        if (encoder != null)
+            encoder.close();
+
+        super.onPause();
     }
 
     @Override
-    public void surfaceCreated(@NonNull SurfaceHolder holder) {
-
+    public boolean onCreateOptionsMenu(Menu menu)
+    {
+        getMenuInflater().inflate(R.menu.main, menu);
+        return true;
     }
 
     @Override
-    public void surfaceChanged(@NonNull SurfaceHolder holder, int format, int width, int height) {
+    public boolean onOptionsItemSelected(MenuItem item)
+    {
+        int id = item.getItemId();
+        if (id == R.id.action_settings)
+            return true;
+        return super.onOptionsItemSelected(item);
+    }
 
+
+    @Override
+    public void onPreviewFrame(byte[] data, Camera camera)
+    {
+        this.camera.addCallbackBuffer(this.previewBuffer);
+
+        if (this.isStreaming)
+        {
+            if (this.encDataLengthList.size() > 100)
+            {
+                Log.e(TAG, "OUT OF BUFFER");
+                return;
+            }
+
+            byte[] encData = this.encoder.offerEncoder(data);
+            if (encData.length > 0)
+            {
+                synchronized(this.encDataList)
+                {
+                    this.encDataList.add(encData);
+                }
+            }
+        }
     }
 
     @Override
-    public void surfaceDestroyed(@NonNull SurfaceHolder holder) {
+    public void surfaceCreated(SurfaceHolder holder)
+    {
+        startCamera();
+    }
 
+    @Override
+    public void surfaceChanged(SurfaceHolder holder, int format, int width, int height)
+    {
+    }
+
+    @Override
+    public void surfaceDestroyed(SurfaceHolder holder)
+    {
+        stopCamera();
+    }
+
+
+    private void startStream(String ip, int port)
+    {
+        SharedPreferences sp = this.getPreferences(Context.MODE_PRIVATE);
+        int width = sp.getInt(SP_CAM_WIDTH, 0);
+        int height = sp.getInt(SP_CAM_HEIGHT, 0);
+
+        this.encoder = new AvcEncoder();
+        this.encoder.init(width, height, DEFAULT_FRAME_RATE, DEFAULT_BIT_RATE);
+
+        try
+        {
+            this.udpSocket = new DatagramSocket();
+            this.address = InetAddress.getByName(ip);
+            this.port = port;
+        }
+        catch (SocketException e)
+        {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+            return;
+        }
+        catch (UnknownHostException e)
+        {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+            return;
+        }
+        sp.edit().putString(SP_DEST_IP, ip).commit();
+        sp.edit().putInt(SP_DEST_PORT, port).commit();
+
+        this.isStreaming = true;
+        System.out.println("-------Streaming is Returns True----------");
+        Thread thrd = new Thread(senderRun);
+        thrd.start();
+
+        System.out.println("----------Streaming Thread Started--------------------");
+
+        ((Button)this.findViewById(R.id.btnStream)).setText("Stop");
+        this.findViewById(R.id.btnCamSize).setEnabled(false);
+    }
+
+    private void stopStream()
+    {
+        this.isStreaming = false;
+
+        if (this.encoder != null)
+            this.encoder.close();
+        this.encoder = null;
+
+        this.findViewById(R.id.btnCamSize).setEnabled(true);
+    }
+
+    private void startCamera()
+    {
+        SharedPreferences sp = this.getPreferences(Context.MODE_PRIVATE);
+        int width = sp.getInt(SP_CAM_WIDTH, 0);
+        int height = sp.getInt(SP_CAM_HEIGHT, 0);
+        if (width == 0)
+        {
+            Camera tmpCam = Camera.open();
+            Camera.Parameters params = tmpCam.getParameters();
+            final List<Camera.Size> prevSizes = params.getSupportedPreviewSizes();
+            int i = prevSizes.size()-1;
+            width = prevSizes.get(i).width;
+            height = prevSizes.get(i).height;
+            sp.edit().putInt(SP_CAM_WIDTH, width).commit();
+            sp.edit().putInt(SP_CAM_HEIGHT, height).commit();
+            tmpCam.release();
+            tmpCam = null;
+        }
+
+        this.previewHolder.setFixedSize(width, height);
+
+        int stride = (int) Math.ceil(width/16.0f) * 16;
+        int cStride = (int) Math.ceil(width/32.0f)  * 16;
+        final int frameSize = stride * height;
+        final int qFrameSize = cStride * height / 2;
+
+        this.previewBuffer = new byte[frameSize + qFrameSize * 2];
+
+        try
+        {
+            camera = Camera.open();
+            camera.setPreviewDisplay(this.previewHolder);
+            Camera.Parameters params = camera.getParameters();
+            params.setPreviewSize(width, height);
+            params.setPreviewFormat(ImageFormat.YV12);
+            camera.setParameters(params);
+            camera.addCallbackBuffer(previewBuffer);
+            camera.setPreviewCallbackWithBuffer(this);
+            camera.startPreview();
+        }
+        catch (IOException e)
+        {
+            //TODO:
+        }
+        catch (RuntimeException e)
+        {
+            //TODO:
+        }
+    }
+
+    private void stopCamera()
+    {
+        if (camera != null)
+        {
+            camera.setPreviewCallback(null);
+            camera.stopPreview();
+            camera.release();
+            camera = null;
+        }
+    }
+
+    private void showStreamDlg()
+    {
+        LayoutInflater inflater = this.getLayoutInflater();
+        View content = inflater.inflate(R.layout.stream_dlg_view, null);
+
+        SharedPreferences sp = this.getPreferences(Context.MODE_PRIVATE);
+        String ip = sp.getString(SP_DEST_IP, "");
+        int port = sp.getInt(SP_DEST_PORT, -1);
+        if (ip.length() > 0)
+        {
+            EditText etIP = (EditText)content.findViewById(R.id.etIP);
+            etIP.setText(ip);
+            EditText etPort = (EditText)content.findViewById(R.id.etPort);
+            etPort.setText(String.valueOf(port));
+        }
+
+        AlertDialog.Builder dlgBld = new AlertDialog.Builder(this);
+        dlgBld.setTitle(R.string.app_name);
+        dlgBld.setView(content);
+        dlgBld.setPositiveButton(android.R.string.ok,
+                new DialogInterface.OnClickListener()
+                {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which)
+                    {
+                        EditText etIP = (EditText) ((AlertDialog)dialog).findViewById(R.id.etIP);
+                        EditText etPort = (EditText) ((AlertDialog)dialog).findViewById(R.id.etPort);
+                        String ip = etIP.getText().toString();
+                        int port = Integer.valueOf(etPort.getText().toString());
+                        if (ip.length() > 0 && (port >=0 && port <= 65535))
+                        {
+                            System.out.println("------------------------------Connected to the port and Ip---------------------------");
+                            startStream(ip, port);
+
+                            System.out.println("ip: "+ip+" port "+ port);
+
+                        }
+                        else
+                        {
+                            System.out.println("------------------------------Could not get the port and Ip---------------------------");
+                            Toast.makeText(getBaseContext(), "Could not get the IP and Port", Toast.LENGTH_SHORT).show();
+                        }
+                    }
+                });
+        dlgBld.setNegativeButton(android.R.string.cancel, null);
+        dlgBld.show();
+    }
+
+    private void showSettingsDlg()
+    {
+        Camera.Parameters params = camera.getParameters();
+        final List<Camera.Size> prevSizes = params.getSupportedPreviewSizes();
+        String[] choiceStrItems = new String[prevSizes.size()];
+        ArrayList<String> choiceItems = new ArrayList<String>();
+        for (Camera.Size s : prevSizes)
+        {
+            choiceItems.add(s.width + "x" + s.height);
+        }
+        choiceItems.toArray(choiceStrItems);
+
+        AlertDialog.Builder dlgBld = new AlertDialog.Builder(this);
+        dlgBld.setTitle(R.string.app_name);
+        dlgBld.setSingleChoiceItems(choiceStrItems, 0, null);
+        dlgBld.setPositiveButton(android.R.string.ok,
+                new DialogInterface.OnClickListener()
+                {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which)
+                    {
+                        int pos = ((AlertDialog)dialog).getListView().getCheckedItemPosition();
+                        Camera.Size s = prevSizes.get(pos);
+                        SharedPreferences sp = MainActivity.this.getPreferences(Context.MODE_PRIVATE);
+                        sp.edit().putInt(SP_CAM_WIDTH, s.width).commit();
+                        sp.edit().putInt(SP_CAM_HEIGHT, s.height).commit();
+
+                        stopCamera();
+                        startCamera();
+                    }
+                });
+        dlgBld.setNegativeButton(android.R.string.cancel, null);
+        dlgBld.show();
     }
 }
