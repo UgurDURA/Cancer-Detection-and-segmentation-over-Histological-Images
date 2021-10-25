@@ -7,9 +7,14 @@ import net.sourceforge.opencamera.preview.Preview;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
+import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Matrix;
 import android.media.MediaRecorder;
+import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Handler;
 import android.util.Log;
 import android.view.MotionEvent;
@@ -18,8 +23,10 @@ import android.view.View;
 import android.widget.Toast;
 
 import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 
@@ -58,64 +65,63 @@ public class MySurfaceView extends SurfaceView implements CameraSurface {
         };
     }
 
-     public class MyServerFeeder implements Runnable
-     {
-         ServerSocket ss;
-         Socket s;
-         DataInputStream dis;
-         int len;
-         byte[] data;
+    protected void onActivityResult(Intent data)
+    {
+        try {
+
+            final Uri imageUri = data.getData();
+            final InputStream imageStream =
+            final Bitmap selectedImage = BitmapFactory.
 
 
-         @Override
-         public void run() {
 
 
-                 try {
-                     ss = new ServerSocket(9999);
-                 } catch (IOException e) {
-                     e.printStackTrace();
-                 }
-                 handler.post(()->
-                 {
-                     Toast.makeText(getContext().getApplicationContext(), "Listening", Toast.LENGTH_LONG).show();
-                 });
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
 
-                 while(true)
-                 {
-                     try {
-                         s = ss.accept();
-                     } catch (IOException e) {
-                         e.printStackTrace();
-                     }
-                     InputStream in = null;
-                     try {
-                         in = s.getInputStream();
-                     } catch (IOException e) {
-                         e.printStackTrace();
-                     }
-                     dis = new DataInputStream(in);
+   public class SendImageClient extends AsyncTask<byte[], Void, Void>
+   {
 
-                     try {
-                         len = dis.readInt();
-                     } catch (IOException e) {
-                         e.printStackTrace();
-                     }
-                     data = new byte[len];
-                     if(len > 0)
-                     {
-                         try {
-                             dis.readFully(data, 0, data.length);
-                         } catch (IOException e) {
-                             e.printStackTrace();
-                         }
+       @Override
+       protected Void doInBackground(byte[]... voids)
+       {
 
-                     }
-                 }
-             }
+           try {
+               Socket  socket = new Socket("192.168.10.40", 9999);
 
-         }
-     }
+               OutputStream out = socket.getOutputStream();
+
+               DataOutputStream dos = new DataOutputStream(out);
+               dos.writeInt(voids[0].length);
+               dos.write(voids[0], 0, voids[0].length);
+
+               handler.post(()->{
+                   Toast.makeText(getContext(),"Image sent",Toast.LENGTH_LONG).show();
+
+               });
+
+               dos.close();
+               out.close();
+               socket.close();
+
+
+           }
+           catch (IOException e) {
+               e.printStackTrace();
+
+               handler.post(()->
+               {
+                   Toast.makeText(getContext(), "i/o exception", Toast.LENGTH_SHORT).show();
+               });
+           }
+
+           return null;
+
+       }
+   }
+
 
     @Override
     public View getView() {
