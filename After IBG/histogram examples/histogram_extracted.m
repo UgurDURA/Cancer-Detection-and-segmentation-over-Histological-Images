@@ -24,24 +24,24 @@ function y = histogram_extracted(im,name)
     y = figure('Position', get(0, 'Screensize')); % make the plot full screen
     sgtitle(name); % title of the plot
 
-    subplot(221); % create subplot
-    imshow(im); % fill the first subplot
-    title("Imput Image"); % subplot title
+%     subplot(221); % create subplot
+%     imshow(im); % fill the first subplot
+%     title("Imput Image"); % subplot title
+% 
+%     subplot(222); 
+%     imshow(gray_scaled); % fill the second subplot
+%     title("Gray Scale Image"); % subplot title
 
-    subplot(222); 
-    imshow(gray_scaled); % fill the second subplot
-    title("Gray Scale Image"); % subplot title
-
-    subplot(223); 
+%     subplot(223); 
     bar(gLevels, counts); % fill the third subplot
     xlim([0, max(gLevels)]); % x and y axis limits
     ylim([0, max(counts)])
-    subtitle("Built-In Histogram Maker"); % subplot title
-
-    subplot(224); 
-    stem(h,"*"); % fill the last subplot
-    xlim([0, max(gLevels)]); % x and y axis limits
-    ylim([0, max(counts)])
-    subtitle("My Histogram Maker"); % subplot title
+%     subtitle("Built-In Histogram Maker"); % subplot title
+% 
+%     subplot(224); 
+%     stem(h,"*"); % fill the last subplot
+%     xlim([0, max(gLevels)]); % x and y axis limits
+%     ylim([0, max(counts)])
+%     subtitle("My Histogram Maker"); % subplot title
  
 end
