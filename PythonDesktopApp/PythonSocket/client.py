@@ -11,7 +11,7 @@ import socket, cv2, pickle, struct
 #creating the socket
 
 client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-host_ip = "192.168.1.6"
+host_ip = "192.168.1.9"
 port = 9999
 
 client_socket.connect((host_ip, port)) # a tuple
@@ -34,6 +34,12 @@ while True:
     frame_data = data[:msg_size]
     data = data[msg_size:]
     frame = pickle.loads(frame_data)
+    
+    
+    
+    
+    
+    
     cv2.imshow("Received",frame)
     key = cv2.waitKey(1) & 0xFF
     if key == ord("q"):
