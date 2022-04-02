@@ -10,14 +10,17 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="137898ad-a284-428c-ad30-3d1e77ab8705" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../After IBG/histogram examples/10_oppo.jpg" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../MicrosPhone/.idea/deploymentTargetDropDown.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../CredentialsGoogleDrive.rtf" beforeDir="false" afterPath="$PROJECT_DIR$/../../CredentialsGoogleDrive.rtf" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../PythonDesktopApp/PythonSocket/client.py" beforeDir="false" afterPath="$PROJECT_DIR$/../../PythonDesktopApp/PythonSocket/client.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
     <option name="LAST_RESOLUTION" value="IGNORE" />
   </component>
-  <component name="ExecutionTargetManager" SELECTED_TARGET="device_and_snapshot_combo_box_target[ac345c4e]" />
+  <component name="ExecutionTargetManager" SELECTED_TARGET="device_and_snapshot_combo_box_target[/Users/ugur_dura/.android/avd/Nexus_6_API_29.avd]" />
   <component name="ExternalProjectsData">
     <projectState path="$PROJECT_DIR$">
       <ProjectState />
@@ -92,9 +95,7 @@
       <option name="ACTIVITY_CLASS" value="" />
       <option name="SEARCH_ACTIVITY_IN_GLOBAL_SCOPE" value="false" />
       <option name="SKIP_ACTIVITY_VALIDATION" value="false" />
-      <method v="2">
-        <option name="Android.Gradle.BeforeRunTask" enabled="true" />
-      </method>
+      <method v="2" />
     </configuration>
   </component>
   <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
