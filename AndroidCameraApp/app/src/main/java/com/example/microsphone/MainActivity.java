@@ -33,12 +33,15 @@ import java.util.Date;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 
-public class MainActivity extends AppCompatActivity implements View.OnClickListener {
+public class MainActivity<stastic> extends AppCompatActivity implements View.OnClickListener {
 
     private ListenableFuture<ProcessCameraProvider> cameraProviderFuture;
 
 
     private TextureView mTextureView;
+    public static ArrayList<String> logList = new ArrayList<>();
+    public  static String text2 = "App Started";
+    public static int i;
 
     private TextureView.SurfaceTextureListener mSurfaceTextureListener = new TextureView.SurfaceTextureListener()
     {
@@ -46,7 +49,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         public void onSurfaceTextureAvailable(@NonNull SurfaceTexture surface, int width, int height)
         {
             Toast.makeText(MainActivity.this, "Texture view is available", Toast.LENGTH_SHORT).show();
-            log("Texture View is available");
+
             try {
                 setupCamera(width,height);
             } catch (CameraAccessException e) {
@@ -82,7 +85,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         public void onOpened(@NonNull CameraDevice camera)
         {
             mCameraDevice = camera;
-            log("Camera is added");
+
 
         }
 
@@ -132,18 +135,26 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     private void setupCamera(int width, int height) throws CameraAccessException {
         CameraManager cameraManager = (CameraManager) getSystemService(Context.CAMERA_SERVICE);
+
+
         for(String cameraID : cameraManager.getCameraIdList())
         {
             CameraCharacteristics cameraCharacteristics = cameraManager.getCameraCharacteristics(cameraID);
+
             if(cameraCharacteristics.get(CameraCharacteristics.LENS_FACING)==
-            CameraCharacteristics.LENS_FACING_FRONT)
+            CameraCharacteristics.LENS_FACING_BACK)
             {
                 continue;
             }
 
             mcameraID = cameraID;
 
-            log(cameraID);
+            log("Camera ID is: "+cameraID);
+          
+
+
+
+
             return;
 
         }
@@ -170,29 +181,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         bRecording.setOnClickListener(this);
 
 
-
-
-
-
-
-        cameraProviderFuture = ProcessCameraProvider.getInstance(this);
-        cameraProviderFuture.addListener(() -> {
-            try {
-                ProcessCameraProvider cameraProvider = cameraProviderFuture.get();
-                startCameraX(cameraProvider);
-
-            }
-            catch (ExecutionException e )
-            {
-                e.printStackTrace();
-            }
-            catch (InterruptedException e)
-            {
-                e.printStackTrace();
-            }
-
-        }
-        ,getExecutor());
 
 
 
@@ -232,27 +220,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         return ContextCompat.getMainExecutor(this);
     }
 
-    private void startCameraX(ProcessCameraProvider cameraProvider)
-    {
-        cameraProvider.unbindAll();
-
-        CameraSelector cameraSelector = new CameraSelector.Builder()
-                .requireLensFacing(CameraSelector.LENS_FACING_BACK)
-                .build();
-
-        Preview preview = new Preview.Builder().build();
-
-
-
-
-        imageCapture = new ImageCapture.Builder()
-                .setCaptureMode(ImageCapture.CAPTURE_MODE_MAXIMIZE_QUALITY)
-                .build();
-
-        cameraProvider.bindToLifecycle((LifecycleOwner) this, cameraSelector, preview, imageCapture);
-
-
-}
 
     private void capturePhoto()
     {
@@ -310,17 +277,20 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     public void log(String text)
     {
-        ArrayList<String> logList = new ArrayList<>();
         logList.add(text);
-        String text2 = "App Started";
+
+        int range = i;
 
 
-        for (int i = 0; logList.size()>i;i++)
+        for (int i = range; logList.size()>i; i++)
         {
-            text2= "[LOG]:     "+ text2 + "\n" + "[LOG]:       "+ logList.get(i)+"\n" ;
+            text2= text2 + "\n" + "[LOG]: "+ logList.get(i);
+            range++;
+
         }
 
         nameText.setText(text2);
+        i++;
 
     }
 }
