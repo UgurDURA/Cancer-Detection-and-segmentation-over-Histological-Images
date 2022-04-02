@@ -6,63 +6,60 @@
     android:layout_height="match_parent"
     tools:context=".MainActivity">
 
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:orientation="vertical"
-        android:weightSum="100"
+    <TextureView
+        android:id="@+id/textureView"
+        android:layout_width="410dp"
+        android:layout_height="529dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.481"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.004" />
+
+    <RelativeLayout
+        android:layout_width="388dp"
+        android:layout_height="182dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent">
+        app:layout_constraintTop_toBottomOf="@+id/textureView">
 
-        <androidx.camera.view.PreviewView
-            android:id="@+id/previewView"
-            android:layout_width="match_parent"
-            android:layout_height="150dp"
-            android:layout_weight="70" />
+        <Button
+            android:id="@+id/bCapture"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentStart="true"
+            android:layout_alignParentTop="true"
+            android:layout_alignParentBottom="true"
+            android:layout_marginStart="54dp"
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="125dp"
+            android:text="Capture" />
 
-        <RelativeLayout
-            android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:orientation = "horizontal"
-            android:layout_weight="90">
+        <Button
+            android:id="@+id/bRecord"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentTop="true"
+            android:layout_alignParentEnd="true"
+            android:layout_alignParentBottom="true"
+            android:layout_marginTop="8dp"
+            android:layout_marginEnd="62dp"
+            android:layout_marginBottom="126dp"
+            android:text="Record" />
 
-            <Button
-                android:id="@+id/bCapture"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_alignParentStart="true"
-                android:layout_alignParentTop="true"
-                android:layout_marginStart="73dp"
-                android:layout_marginTop="14dp"
-                android:text="@string/capture" />
-
-            <Button
-                android:id="@+id/bRecord"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_alignParentTop="true"
-                android:layout_alignParentEnd="true"
-                android:layout_marginStart="71dp"
-                android:layout_marginTop="14dp"
-                android:layout_marginEnd="71dp"
-                android:text="@string/record" />
-
-            <TextView
-                android:id="@+id/logView"
-                android:layout_width="291dp"
-                android:layout_height="76dp"
-                android:layout_alignParentTop="true"
-                android:layout_alignParentEnd="true"
-                android:layout_marginTop="86dp"
-                android:layout_marginEnd="41dp"
-                android:layout_marginBottom="56dp"
-                android:text="Log Information"/>
-
-        </RelativeLayout>
-
-
-        ></LinearLayout>
+        <TextView
+            android:id="@+id/logView"
+            android:layout_width="356dp"
+            android:layout_height="119dp"
+            android:layout_alignParentStart="true"
+            android:layout_alignParentTop="true"
+            android:layout_alignParentBottom="true"
+            android:layout_marginStart="22dp"
+            android:layout_marginTop="58dp"
+            android:layout_marginBottom="5dp"
+            android:text="LogText" />
+    </RelativeLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

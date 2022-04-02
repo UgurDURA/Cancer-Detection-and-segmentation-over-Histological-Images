@@ -17,11 +17,13 @@ import android.os.Environment;
 import android.view.TextureView;
 import android.view.View;
 import android.widget.Button;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.common.util.concurrent.ListenableFuture;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
@@ -30,13 +32,17 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     private ListenableFuture<ProcessCameraProvider> cameraProviderFuture;
 
-    PreviewView previewView;
+
     private TextureView mTextureView;
+
     private TextureView.SurfaceTextureListener mSurfaceTextureListener = new TextureView.SurfaceTextureListener()
     {
         @Override
         public void onSurfaceTextureAvailable(@NonNull SurfaceTexture surface, int width, int height)
         {
+            Toast.makeText(MainActivity.this, "Texture view is available", Toast.LENGTH_SHORT).show();
+            log("Texture View is available");
+
 
 
         }
@@ -55,10 +61,11 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         public void onSurfaceTextureUpdated(@NonNull SurfaceTexture surface) {
 
         }
-    }
+    };
     Button bTakePicture, bRecording;
     private ImageCapture imageCapture;
     private Object LifecycleOwner;
+    private TextView nameText;
 
 
     @Override
@@ -82,16 +89,22 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        mTextureView = (TextureView) findViewById(R.id.previewView);
+       
+
+        mTextureView = (TextureView) findViewById(R.id.textureView);
 
 
 
         bTakePicture = findViewById(R.id.bCapture);
         bRecording = findViewById(R.id.bRecord);
-        previewView = findViewById(R.id.previewView);
+        nameText = findViewById(R.id.logView);
+
+
 
         bTakePicture.setOnClickListener(this);
         bRecording.setOnClickListener(this);
+
+
 
 
 
@@ -132,7 +145,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         }
         else
         {
-            mTextureView.setSurfaceTextureListener();
+            mTextureView.setSurfaceTextureListener(mSurfaceTextureListener);
         }
 
     }
@@ -152,7 +165,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         Preview preview = new Preview.Builder().build();
 
-        preview.setSurfaceProvider(previewView.getSurfaceProvider());
+
 
 
         imageCapture = new ImageCapture.Builder()
@@ -215,6 +228,18 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         }
 
 
+
+    }
+
+    public void log(String text)
+    {
+        ArrayList<String> logList = new ArrayList<>();
+        logList.add(text);
+
+        for (int i = 0; logList.size()>i;i++)
+        {
+            nameText.setText("\nLog Message: " +logList.get(i));
+        }
 
     }
 }
