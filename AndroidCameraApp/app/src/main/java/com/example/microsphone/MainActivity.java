@@ -150,7 +150,7 @@ public class MainActivity<stastic> extends AppCompatActivity implements View.OnC
             mcameraID = cameraID;
 
             log("Camera ID is: "+cameraID);
-          
+
 
 
 
