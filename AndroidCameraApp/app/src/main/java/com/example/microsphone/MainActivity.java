@@ -19,6 +19,9 @@ import android.hardware.camera2.CameraDevice;
 import android.hardware.camera2.CameraManager;
 import android.os.Bundle;
 import android.os.Environment;
+import android.os.Handler;
+import android.os.HandlerThread;
+import android.util.Size;
 import android.view.TextureView;
 import android.view.View;
 import android.widget.Button;
@@ -29,6 +32,7 @@ import com.google.common.util.concurrent.ListenableFuture;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
@@ -106,6 +110,9 @@ public class MainActivity<stastic> extends AppCompatActivity implements View.OnC
     };
 
     private  String mcameraID;
+    private HandlerThread mBackgroundHandlerThread;
+    private Handler mBackgroundHandler;
+    
 
 
     @Override
@@ -131,6 +138,22 @@ public class MainActivity<stastic> extends AppCompatActivity implements View.OnC
             mCameraDevice.close();
             mCameraDevice = null;
         }
+    }
+
+    private void startBackgroundThread()
+    {
+        mBackgroundHandlerThread = new HandlerThread("camea2VideoImage");
+        mBackgroundHandlerThread.start();
+        log("Thread Started");
+        mBackgroundHandler = new Handler(mBackgroundHandlerThread.getLooper());
+    }
+
+    private void stopBackgroundThread() throws InterruptedException {
+        mBackgroundHandlerThread.quitSafely();
+        mBackgroundHandlerThread.join();
+        mBackgroundHandlerThread = null;
+        mBackgroundHandler = null;
+        log("Thread Stopped");
     }
 
     private void setupCamera(int width, int height) throws CameraAccessException {
@@ -192,6 +215,8 @@ public class MainActivity<stastic> extends AppCompatActivity implements View.OnC
     {
         super.onResume();
 
+        startBackgroundThread();
+
         if(mTextureView.isAvailable())
         {
             try {
@@ -210,6 +235,11 @@ public class MainActivity<stastic> extends AppCompatActivity implements View.OnC
     protected void onPause()
     {
         closeCamera();
+        try {
+            stopBackgroundThread();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
         super.onPause();
 
 
