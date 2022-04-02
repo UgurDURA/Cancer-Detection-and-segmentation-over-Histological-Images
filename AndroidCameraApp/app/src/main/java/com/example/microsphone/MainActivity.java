@@ -11,7 +11,12 @@ import androidx.camera.view.PreviewView;
 import androidx.core.content.ContextCompat;
 import androidx.lifecycle.LifecycleOwner;
 
+import android.content.Context;
 import android.graphics.SurfaceTexture;
+import android.hardware.camera2.CameraAccessException;
+import android.hardware.camera2.CameraCharacteristics;
+import android.hardware.camera2.CameraDevice;
+import android.hardware.camera2.CameraManager;
 import android.os.Bundle;
 import android.os.Environment;
 import android.view.TextureView;
@@ -42,7 +47,11 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         {
             Toast.makeText(MainActivity.this, "Texture view is available", Toast.LENGTH_SHORT).show();
             log("Texture View is available");
-
+            try {
+                setupCamera(width,height);
+            } catch (CameraAccessException e) {
+                e.printStackTrace();
+            }
 
 
         }
@@ -62,10 +71,38 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         }
     };
+
     Button bTakePicture, bRecording;
     private ImageCapture imageCapture;
     private Object LifecycleOwner;
     private TextView nameText;
+    private CameraDevice mCameraDevice;
+    private CameraDevice.StateCallback mCameraDeviceStateCallback = new CameraDevice.StateCallback() {
+        @Override
+        public void onOpened(@NonNull CameraDevice camera)
+        {
+            mCameraDevice = camera;
+            log("Camera is added");
+
+        }
+
+        @Override
+        public void onDisconnected(@NonNull CameraDevice camera)
+        {
+            camera.close();
+            mCameraDevice = null;
+        }
+
+        @Override
+        public void onError(@NonNull CameraDevice camera, int error)
+        {
+            camera.close();
+            mCameraDevice = null;
+
+        }
+    };
+
+    private  String mcameraID;
 
 
     @Override
@@ -84,12 +121,40 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         }
     }
 
+    private void closeCamera()
+    {
+        if(mCameraDevice != null)
+        {
+            mCameraDevice.close();
+            mCameraDevice = null;
+        }
+    }
+
+    private void setupCamera(int width, int height) throws CameraAccessException {
+        CameraManager cameraManager = (CameraManager) getSystemService(Context.CAMERA_SERVICE);
+        for(String cameraID : cameraManager.getCameraIdList())
+        {
+            CameraCharacteristics cameraCharacteristics = cameraManager.getCameraCharacteristics(cameraID);
+            if(cameraCharacteristics.get(CameraCharacteristics.LENS_FACING)==
+            CameraCharacteristics.LENS_FACING_FRONT)
+            {
+                continue;
+            }
+
+            mcameraID = cameraID;
+
+            log(cameraID);
+            return;
+
+        }
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-       
+
 
         mTextureView = (TextureView) findViewById(R.id.textureView);
 
@@ -141,12 +206,24 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         if(mTextureView.isAvailable())
         {
+            try {
+                setupCamera(mTextureView.getWidth(),mTextureView.getHeight());
+            } catch (CameraAccessException e) {
+                e.printStackTrace();
+            }
 
         }
         else
         {
             mTextureView.setSurfaceTextureListener(mSurfaceTextureListener);
         }
+
+    }
+    protected void onPause()
+    {
+        closeCamera();
+        super.onPause();
+
 
     }
 
@@ -235,11 +312,15 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     {
         ArrayList<String> logList = new ArrayList<>();
         logList.add(text);
+        String text2 = "App Started";
+
 
         for (int i = 0; logList.size()>i;i++)
         {
-            nameText.setText("\nLog Message: " +logList.get(i));
+            text2= "[LOG]:     "+ text2 + "\n" + "[LOG]:       "+ logList.get(i)+"\n" ;
         }
+
+        nameText.setText(text2);
 
     }
 }
