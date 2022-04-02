@@ -17,10 +17,10 @@
         app:layout_constraintTop_toTopOf="parent">
 
         <androidx.camera.view.PreviewView
-            android:id = "@+id/previewView"
+            android:id="@+id/previewView"
             android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:layout_weight="90" />
+            android:layout_height="150dp"
+            android:layout_weight="70" />
 
         <RelativeLayout
             android:layout_width="match_parent"
@@ -48,6 +48,18 @@
                 android:layout_marginTop="14dp"
                 android:layout_marginEnd="71dp"
                 android:text="@string/record" />
+
+            <TextView
+                android:id="@+id/logView"
+                android:layout_width="291dp"
+                android:layout_height="76dp"
+                android:layout_alignParentTop="true"
+                android:layout_alignParentEnd="true"
+                android:layout_marginTop="86dp"
+                android:layout_marginEnd="41dp"
+                android:layout_marginBottom="56dp"
+                android:text="Log Information"/>
+
         </RelativeLayout>
 
 
