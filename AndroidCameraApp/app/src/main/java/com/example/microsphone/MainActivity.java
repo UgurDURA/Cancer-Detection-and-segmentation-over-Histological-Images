@@ -17,9 +17,11 @@ import android.content.Context;
 import android.content.pm.PackageManager;
 import android.graphics.SurfaceTexture;
 import android.hardware.camera2.CameraAccessException;
+import android.hardware.camera2.CameraCaptureSession;
 import android.hardware.camera2.CameraCharacteristics;
 import android.hardware.camera2.CameraDevice;
 import android.hardware.camera2.CameraManager;
+import android.hardware.camera2.CaptureRequest;
 import android.hardware.camera2.params.StreamConfigurationMap;
 import android.os.Build;
 import android.os.Bundle;
@@ -39,10 +41,12 @@ import com.google.common.util.concurrent.ListenableFuture;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 
@@ -89,8 +93,6 @@ public class MainActivity<stastic> extends AppCompatActivity implements View.OnC
     };
 
     Button bTakePicture, bRecording;
-    private ImageCapture imageCapture;
-    private Object LifecycleOwner;
     private TextView nameText;
     private CameraDevice mCameraDevice;
     private CameraDevice.StateCallback mCameraDeviceStateCallback = new CameraDevice.StateCallback() {
@@ -98,8 +100,13 @@ public class MainActivity<stastic> extends AppCompatActivity implements View.OnC
         public void onOpened(@NonNull CameraDevice camera)
         {
             mCameraDevice = camera;
-            Toast.makeText(getApplicationContext(),"Camera connection is succesfull",Toast.LENGTH_SHORT).show();
-            log("Camera is connected.....");
+            try {
+                startPreview();
+            } catch (CameraAccessException e) {
+                e.printStackTrace();
+            }
+
+
 
 
         }
@@ -123,12 +130,19 @@ public class MainActivity<stastic> extends AppCompatActivity implements View.OnC
     private HandlerThread mBackgroundHandlerThread;
     private Handler mBackgroundHandler;
     private static SparseIntArray ORIENTATIONS = new SparseIntArray();
+    private CaptureRequest.Builder mCaptureRequestBuilder;
+
 
     static {
         ORIENTATIONS.append(Surface.ROTATION_0, 0);
         ORIENTATIONS.append(Surface.ROTATION_90, 90);
         ORIENTATIONS.append(Surface.ROTATION_180, 180);
         ORIENTATIONS.append(Surface.ROTATION_270, 270);
+    }
+
+    @Override
+    public void onClick(View v) {
+
     }
 
     private static class CompareSizeByArea implements Comparator<Size> {
@@ -162,7 +176,7 @@ public class MainActivity<stastic> extends AppCompatActivity implements View.OnC
     }
 
     private void startBackgroundThread() {
-        mBackgroundHandlerThread = new HandlerThread("camea2VideoImage");
+        mBackgroundHandlerThread = new HandlerThread("camera2VideoImage");
         mBackgroundHandlerThread.start();
         log("Thread Started");
         mBackgroundHandler = new Handler(mBackgroundHandlerThread.getLooper());
@@ -203,11 +217,24 @@ public class MainActivity<stastic> extends AppCompatActivity implements View.OnC
         CameraManager cameraManager = (CameraManager) getSystemService(Context.CAMERA_SERVICE);
 
 
+
+        String[] cameraIds =  cameraManager.getCameraIdList();
+
+
+        for (int i = 0; i <cameraIds.length;i++){
+            log(cameraIds[i]);
+        }
+
+
         for (String cameraID : cameraManager.getCameraIdList()) {
             CameraCharacteristics cameraCharacteristics = cameraManager.getCameraCharacteristics(cameraID);
 
+
+                int b = cameraCharacteristics.get(CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL);
+
+
             if (cameraCharacteristics.get(CameraCharacteristics.LENS_FACING) ==
-                    CameraCharacteristics.LENS_FACING_BACK) {
+                    CameraCharacteristics.LENS_FACING_FRONT) {
                 continue;
             }
 
@@ -227,9 +254,16 @@ public class MainActivity<stastic> extends AppCompatActivity implements View.OnC
 
             mPreviewSize = optimalSize(map.getOutputSizes(SurfaceTexture.class), rotateWidth, rotateHeight);
 
-            mcameraID = cameraID;
+            mcameraID = "0";
+
+            log("Current Camera ID is: " + mcameraID);
+
+
 
             log("Camera ID is: " + cameraID);
+            log("Device Camera Hardware Level: " + b);
+
+
 
             return;
 
@@ -268,6 +302,38 @@ public class MainActivity<stastic> extends AppCompatActivity implements View.OnC
         }
     }
 
+    private void startPreview() throws CameraAccessException {
+        SurfaceTexture surfaceTexture = mTextureView.getSurfaceTexture();
+        surfaceTexture.setDefaultBufferSize(mPreviewSize.getWidth(),mPreviewSize.getHeight());
+        Surface previewSurface = new Surface(surfaceTexture);
+
+        mCaptureRequestBuilder = mCameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW);
+        mCaptureRequestBuilder.addTarget(previewSurface); //Check this part
+
+        mCameraDevice.createCaptureSession(Arrays.asList(previewSurface),
+                new CameraCaptureSession.StateCallback() {
+                    @Override
+                    public void onConfigured(@NonNull CameraCaptureSession session)
+                    {
+                        try {
+                            session.setRepeatingRequest(mCaptureRequestBuilder.build(),  //Use this part for UDP
+                                    null, mBackgroundHandler);
+                        } catch (CameraAccessException e) {
+                            e.printStackTrace();
+                        }
+
+                    }
+
+                    @Override
+                    public void onConfigureFailed(@NonNull CameraCaptureSession session)
+                    {
+                        Toast.makeText(getApplicationContext(), "Unable to setup Cameraview on Texture view", Toast.LENGTH_SHORT).show();
+
+                    }
+                }, null);
+
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -276,17 +342,12 @@ public class MainActivity<stastic> extends AppCompatActivity implements View.OnC
 
 
         mTextureView = (TextureView) findViewById(R.id.textureView);
-
-
-
         bTakePicture = findViewById(R.id.bCapture);
         bRecording = findViewById(R.id.bRecord);
         nameText = findViewById(R.id.logView);
 
 
 
-        bTakePicture.setOnClickListener(this);
-        bRecording.setOnClickListener(this);
 
 
 
@@ -327,7 +388,7 @@ public class MainActivity<stastic> extends AppCompatActivity implements View.OnC
             if(grantResults[0] != PackageManager.PERMISSION_GRANTED)
             {
                 Toast.makeText(getApplicationContext(),"Application will not run without camera services",Toast.LENGTH_SHORT).show();
-                log("Application requieres camera permission");
+                log("Application requires camera permission");
             }
         }
     }
@@ -345,65 +406,10 @@ public class MainActivity<stastic> extends AppCompatActivity implements View.OnC
 
     }
 
-    private Executor getExecutor()
-    {
-        return ContextCompat.getMainExecutor(this);
-    }
-
-
-    private void capturePhoto()
-    {
-        File photoDir = new File("/storage/emulated/0/DCIM");
-
-        if(!photoDir.exists())
-            photoDir.mkdir();
-
-        Date date = new Date();
-        String timestamp = String.valueOf(date.getTime());
-        String photoFilePath = photoDir.getAbsolutePath()+"/"+timestamp+".png";
-        
-        File photoFile = new File(photoFilePath);
-        File path = getExternalFilesDir(Environment.DIRECTORY_PICTURES);
-        String path2 = path.toString();
-        
-        imageCapture.takePicture(
-                new ImageCapture.OutputFileOptions.Builder(photoFile).build(),
-                getExecutor(),
-                new ImageCapture.OnImageSavedCallback() {
-                    @Override
-                    public void onImageSaved(@NonNull ImageCapture.OutputFileResults outputFileResults) 
-                    {
-                        Toast.makeText(MainActivity.this, "Photo has been saved succesfully ", Toast.LENGTH_SHORT).show();
-                        
-                    }
-
-                    @Override
-                    public void onError(@NonNull ImageCaptureException exception)
-                    {
-                        Toast.makeText(MainActivity.this, "Error while saving photo : "+photoFilePath, Toast.LENGTH_SHORT).show();
-
-                    }
-                }
-        );
-
-
-    }
-
-    @Override
-    public void onClick(View v)
-    {
-        switch (v.getId())
-        {
-            case R.id.bCapture:
-                capturePhoto();
-                break;
-            case R.id.bRecord:
-                break;
-        }
 
 
 
-    }
+
 
     public void log(String text)
     {
