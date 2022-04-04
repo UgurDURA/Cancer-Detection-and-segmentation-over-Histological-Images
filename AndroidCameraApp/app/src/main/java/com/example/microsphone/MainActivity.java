@@ -19,6 +19,7 @@ import android.hardware.camera2.CameraManager;
 import android.hardware.camera2.CaptureRequest;
 import android.hardware.camera2.params.StreamConfigurationMap;
 import android.icu.text.SimpleDateFormat;
+import android.media.MediaRecorder;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
@@ -54,6 +55,8 @@ public class MainActivity<stastic> extends AppCompatActivity implements View.OnC
     public static int i;
     private String mcameraID;
     private Size mPreviewSize;
+    private Size mVideoSize;
+    private MediaRecorder mMediaRecorder;
     private HandlerThread mBackgroundHandlerThread;
     private Handler mBackgroundHandler;
     private static SparseIntArray ORIENTATIONS = new SparseIntArray();
@@ -99,6 +102,8 @@ public class MainActivity<stastic> extends AppCompatActivity implements View.OnC
 
     private File mVideoFolder;
     private String mVideoFileName;
+
+    private int mTotalRotation;
 
 
 
@@ -224,7 +229,6 @@ public class MainActivity<stastic> extends AppCompatActivity implements View.OnC
         for (String cameraID : cameraManager.getCameraIdList()) {
             CameraCharacteristics cameraCharacteristics = cameraManager.getCameraCharacteristics(cameraID);
 
-
                 int b = cameraCharacteristics.get(CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL);
 
 
@@ -237,8 +241,8 @@ public class MainActivity<stastic> extends AppCompatActivity implements View.OnC
 
 
             int deviceOrientation = getWindowManager().getDefaultDisplay().getRotation();
-            int totalRotation = sensorTodeviceRotation(cameraCharacteristics, deviceOrientation);
-            boolean swapRotation = totalRotation == 90 || totalRotation == 270;
+            mTotalRotation = sensorTodeviceRotation(cameraCharacteristics, deviceOrientation);
+            boolean swapRotation = mTotalRotation  == 90 || mTotalRotation == 270;
             int rotateWidth = width;
             int rotateHeight = height;
 
@@ -248,6 +252,7 @@ public class MainActivity<stastic> extends AppCompatActivity implements View.OnC
             }
 
             mPreviewSize = optimalSize(map.getOutputSizes(SurfaceTexture.class), rotateWidth, rotateHeight);
+            mVideoSize = optimalSize(map.getOutputSizes(MediaRecorder.class), rotateWidth, rotateHeight);
 
             mcameraID = "0"; //Manually provided camera ID
 
@@ -327,6 +332,8 @@ public class MainActivity<stastic> extends AppCompatActivity implements View.OnC
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        createVideoFolder();
+        mMediaRecorder = new MediaRecorder();
 
 
         mTextureView = (TextureView) findViewById(R.id.textureView);
@@ -487,6 +494,16 @@ public class MainActivity<stastic> extends AppCompatActivity implements View.OnC
             createVideoFileName();
 
         }
+    }
+
+    private void setupMediaRecorder()
+    {
+        mMediaRecorder.setVideoSource(MediaRecorder.VideoSource.SURFACE);
+        mMediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
+        mMediaRecorder.setOutputFile(mVideoFileName);
+        mMediaRecorder.setVideoEncodingBitRate(10000000);
+        
+
     }
 
 
