@@ -18,36 +18,51 @@
         app:layout_constraintVertical_bias="0.004" />
 
     <RelativeLayout
-        android:layout_width="388dp"
-        android:layout_height="182dp"
+        android:layout_width="393dp"
+        android:layout_height="200dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/textureView">
 
+
         <Button
             android:id="@+id/bCapture"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            android:layout_height="35dp"
             android:layout_alignParentStart="true"
             android:layout_alignParentTop="true"
             android:layout_alignParentBottom="true"
-            android:layout_marginStart="54dp"
-            android:layout_marginTop="8dp"
-            android:layout_marginBottom="125dp"
+            android:layout_marginStart="5dp"
+            android:layout_marginTop="41dp"
+            android:layout_marginBottom="121dp"
             android:text="Capture" />
 
         <Button
             android:id="@+id/bRecord"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            android:layout_height="36dp"
             android:layout_alignParentTop="true"
             android:layout_alignParentEnd="true"
             android:layout_alignParentBottom="true"
-            android:layout_marginTop="8dp"
-            android:layout_marginEnd="62dp"
-            android:layout_marginBottom="126dp"
+            android:layout_marginTop="41dp"
+            android:layout_marginEnd="15dp"
+            android:layout_marginBottom="123dp"
             android:text="Record" />
+
+        <Chronometer
+            android:id="@+id/chronometer"
+            android:layout_width="68dp"
+            android:layout_height="34dp"
+            android:layout_alignParentStart="true"
+            android:layout_alignParentEnd="true"
+            android:layout_alignParentBottom="true"
+            android:layout_marginStart="297dp"
+            android:layout_marginEnd="28dp"
+            android:layout_marginBottom="158dp"
+            android:textColor="#ff0000"
+            android:textSize="25dp"
+            android:visibility="invisible" />
 
         <ScrollView
             android:layout_width="372dp"
@@ -60,7 +75,7 @@
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="vertical" >
+                android:orientation="vertical">
 
                 <TextView
                     android:id="@+id/logView"

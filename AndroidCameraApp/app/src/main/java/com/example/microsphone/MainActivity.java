@@ -10,6 +10,7 @@ import android.Manifest;
 import android.content.Context;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
+import android.graphics.ImageFormat;
 import android.graphics.SurfaceTexture;
 import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraCaptureSession;
@@ -17,25 +18,33 @@ import android.hardware.camera2.CameraCharacteristics;
 import android.hardware.camera2.CameraDevice;
 import android.hardware.camera2.CameraManager;
 import android.hardware.camera2.CaptureRequest;
+import android.hardware.camera2.CaptureResult;
+import android.hardware.camera2.TotalCaptureResult;
 import android.hardware.camera2.params.StreamConfigurationMap;
 import android.icu.text.SimpleDateFormat;
+
+import android.media.ImageReader;
 import android.media.MediaRecorder;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.HandlerThread;
+import android.os.SystemClock;
 import android.util.Size;
 import android.util.SparseIntArray;
 import android.view.Surface;
 import android.view.TextureView;
 import android.view.View;
 import android.widget.Button;
+import android.widget.Chronometer;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import java.io.File;
+
 import java.io.IOException;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -44,11 +53,16 @@ import java.util.Date;
 import java.util.List;
 
 
-public class MainActivity<stastic> extends AppCompatActivity implements View.OnClickListener {
+
+public class MainActivity extends AppCompatActivity implements View.OnClickListener {
 
 
     private static final int REQUEST_CAMERA_PERMISSION_RESULT = 0;
     private static final int REQUEST_WRITE_EXTERNAL_STORAGE_PERMISSION_RESULT = 1;
+    private static final int STATE_PREVIEW = 0;
+    private static final int STATE_WAIT_LOCK = 1;
+    private int mCaptureState = STATE_PREVIEW;
+
     private TextureView mTextureView;
     public static ArrayList<String> logList = new ArrayList<>();
     public static String text2 = "App Started";
@@ -56,13 +70,22 @@ public class MainActivity<stastic> extends AppCompatActivity implements View.OnC
     private String mcameraID;
     private Size mPreviewSize;
     private Size mVideoSize;
+    private Size mImageSize;
+    private ImageReader mImageReader;
+    private final ImageReader.OnImageAvailableListener mOnImageAvailableListener = new ImageReader.OnImageAvailableListener() {
+        @Override
+        public void onImageAvailable(ImageReader reader) {
+
+        }
+    };
     private MediaRecorder mMediaRecorder;
+    private Chronometer mChronometer;
     private HandlerThread mBackgroundHandlerThread;
     private Handler mBackgroundHandler;
     private static SparseIntArray ORIENTATIONS = new SparseIntArray();
     private CaptureRequest.Builder mCaptureRequestBuilder;
 
-    private Button mRecordImageButton;
+
     private boolean mIsRecording = false;
 
     private TextureView.SurfaceTextureListener mSurfaceTextureListener = new TextureView.SurfaceTextureListener() {
@@ -103,23 +126,75 @@ public class MainActivity<stastic> extends AppCompatActivity implements View.OnC
     private File mVideoFolder;
     private String mVideoFileName;
 
+
+
+
     private int mTotalRotation;
 
 
+
+
+    private CameraCaptureSession mPreviewCaptureSession;
+    private CameraCaptureSession.CaptureCallback mPreviewCaptureCallback = new CameraCaptureSession.CaptureCallback() {
+
+        private void process(CaptureResult captureResult) throws CameraAccessException {
+            switch (mCaptureState)
+            {
+                case STATE_PREVIEW:
+                    //Do nothing
+                    break;
+                case STATE_WAIT_LOCK:
+                    mCaptureState = STATE_PREVIEW;
+                    Integer afState = captureResult.get(CaptureResult.CONTROL_AF_STATE);
+                    if(afState == CaptureResult.CONTROL_AF_STATE_FOCUSED_LOCKED || afState == CaptureResult.CONTROL_AF_STATE_NOT_FOCUSED_LOCKED)
+                    {
+                        Toast.makeText(getApplicationContext(), "Auto Focus Locked", Toast.LENGTH_SHORT).show();
+
+                    }
+
+                    break;
+
+            }
+
+        }
+        @Override
+        public void onCaptureCompleted(@NonNull CameraCaptureSession session, @NonNull CaptureRequest request, @NonNull TotalCaptureResult result) {
+            super.onCaptureCompleted(session, request, result);
+            try {
+                process(result);
+            } catch (CameraAccessException e) {
+                e.printStackTrace();
+            }
+        }
+    };
 
     private CameraDevice.StateCallback mCameraDeviceStateCallback = new CameraDevice.StateCallback() {
         @Override
         public void onOpened(@NonNull CameraDevice camera)
         {
             mCameraDevice = camera;
-            try {
-                startPreview();
-            } catch (CameraAccessException e) {
-                e.printStackTrace();
+            if(mIsRecording)
+            {
+                try {
+                    createVideoFileName();
+                    startRecord();
+                    mMediaRecorder.start();
+                    mChronometer.setBase(SystemClock.elapsedRealtime());
+                    mChronometer.setVisibility(View.VISIBLE);
+                    mChronometer.start();
+                } catch (IOException | CameraAccessException e) {
+                    e.printStackTrace();
+                }
             }
+            else
+            {
+                try {
+                    startPreview();
+                } catch (CameraAccessException e) {
+                    e.printStackTrace();
+                }
 
-
-
+            }
 
         }
 
@@ -254,6 +329,11 @@ public class MainActivity<stastic> extends AppCompatActivity implements View.OnC
             mPreviewSize = optimalSize(map.getOutputSizes(SurfaceTexture.class), rotateWidth, rotateHeight);
             mVideoSize = optimalSize(map.getOutputSizes(MediaRecorder.class), rotateWidth, rotateHeight);
 
+            mImageSize = optimalSize(map.getOutputSizes(ImageFormat.JPEG), rotateWidth, rotateHeight);
+            mImageReader = mImageReader.newInstance(mImageSize.getWidth(), mImageSize.getHeight(), ImageFormat.JPEG,1);
+
+            mImageReader.setOnImageAvailableListener(mOnImageAvailableListener, mBackgroundHandler);
+
             mcameraID = "0"; //Manually provided camera ID
 
             log("Current Camera ID is: " + mcameraID);
@@ -295,6 +375,40 @@ public class MainActivity<stastic> extends AppCompatActivity implements View.OnC
         }
     }
 
+    private void startRecord() throws IOException, CameraAccessException {
+        setupMediaRecorder();
+        SurfaceTexture surfaceTexture = mTextureView.getSurfaceTexture();
+        surfaceTexture.setDefaultBufferSize(mPreviewSize.getWidth(),mPreviewSize.getHeight());
+        Surface previewSurface = new Surface(surfaceTexture);
+        Surface recordSurface = mMediaRecorder.getSurface();
+        mCaptureRequestBuilder = mCameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_RECORD);
+        mCaptureRequestBuilder.addTarget(previewSurface);
+        mCaptureRequestBuilder.addTarget(recordSurface);
+
+        mCameraDevice.createCaptureSession(Arrays.asList(previewSurface, recordSurface),
+                new CameraCaptureSession.StateCallback() {
+                    @Override
+                    public void onConfigured(@NonNull CameraCaptureSession session)
+                    {
+                        try {
+                            session.setRepeatingRequest(
+                                    mCaptureRequestBuilder.build(),null,null
+                            );
+                        } catch (CameraAccessException e) {
+                            e.printStackTrace();
+                        }
+
+
+                    }
+
+                    @Override
+                    public void onConfigureFailed(@NonNull CameraCaptureSession session) {
+
+                    }
+                },null);
+
+    }
+
     private void startPreview() throws CameraAccessException {
         SurfaceTexture surfaceTexture = mTextureView.getSurfaceTexture();
         surfaceTexture.setDefaultBufferSize(mPreviewSize.getWidth(),mPreviewSize.getHeight());
@@ -303,13 +417,14 @@ public class MainActivity<stastic> extends AppCompatActivity implements View.OnC
         mCaptureRequestBuilder = mCameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW);
         mCaptureRequestBuilder.addTarget(previewSurface); //Check this part
 
-        mCameraDevice.createCaptureSession(Arrays.asList(previewSurface),
+        mCameraDevice.createCaptureSession(Arrays.asList(previewSurface, mImageReader.getSurface()),
                 new CameraCaptureSession.StateCallback() {
                     @Override
                     public void onConfigured(@NonNull CameraCaptureSession session)
                     {
+                        mPreviewCaptureSession = session;
                         try {
-                            session.setRepeatingRequest(mCaptureRequestBuilder.build(),  //Use this part for UDP
+                            mPreviewCaptureSession.setRepeatingRequest(mCaptureRequestBuilder.build(),  //Use this part for UDP
                                     null, mBackgroundHandler);
                         } catch (CameraAccessException e) {
                             e.printStackTrace();
@@ -327,20 +442,30 @@ public class MainActivity<stastic> extends AppCompatActivity implements View.OnC
 
     }
 
+
+
+
+
+
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
         createVideoFolder();
+
         mMediaRecorder = new MediaRecorder();
+
+
 
 
         mTextureView = (TextureView) findViewById(R.id.textureView);
         bTakePicture = findViewById(R.id.bCapture);
-
+        mChronometer = (Chronometer) findViewById(R.id.chronometer);
         bRecording = findViewById(R.id.bRecord);
         nameText = findViewById(R.id.logView);
+
         bTakePicture.setBackgroundColor(Color.BLUE);
         bRecording.setBackgroundColor(Color.BLUE);
 
@@ -350,20 +475,40 @@ public class MainActivity<stastic> extends AppCompatActivity implements View.OnC
             {
                 if(mIsRecording)
                 {
+                    mChronometer.stop();
+                    mChronometer.setVisibility(View.INVISIBLE);
                     mIsRecording = false;
                     bRecording.setBackgroundColor(Color.BLUE);
+                    mMediaRecorder.stop();
+                    mMediaRecorder.reset();
+                    try {
+                        startPreview();
+                    } catch (CameraAccessException e) {
+                        e.printStackTrace();
+                    }
                 }
 
                 else
                 {
                     try {
                         checkWritePermission();
-                    } catch (IOException e) {
+                    } catch (IOException | CameraAccessException e) {
                         e.printStackTrace();
                     }
 
                 }
 
+            }
+        });
+
+        bTakePicture.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                try {
+                    lockFocus();
+                } catch (CameraAccessException e) {
+                    e.printStackTrace();
+                }
             }
         });
 
@@ -450,7 +595,7 @@ public class MainActivity<stastic> extends AppCompatActivity implements View.OnC
     {
         File movieFile = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MOVIES);
 
-        mVideoFolder = new File(movieFile, "MicrosPhone_Images");
+        mVideoFolder = new File(movieFile, "MicrosPhone_Videos");
 
         if(!mVideoFolder.exists())
         {
@@ -467,7 +612,8 @@ public class MainActivity<stastic> extends AppCompatActivity implements View.OnC
 
     }
 
-    private void checkWritePermission() throws IOException {
+
+    private void checkWritePermission() throws IOException, CameraAccessException {
         if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.M)
         {
             if(ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE)
@@ -476,6 +622,10 @@ public class MainActivity<stastic> extends AppCompatActivity implements View.OnC
                 mIsRecording = true;
                 bRecording.setBackgroundColor(Color.RED);
                 createVideoFileName();
+                startRecord();
+                mMediaRecorder.start();
+                mChronometer.start();
+
 
             }
             else
@@ -492,6 +642,12 @@ public class MainActivity<stastic> extends AppCompatActivity implements View.OnC
             mIsRecording = true;
             bRecording.setBackgroundColor(Color.RED);
             createVideoFileName();
+            startRecord();
+
+            mMediaRecorder.start();
+            mChronometer.setBase(SystemClock.elapsedRealtime());
+            mChronometer.setVisibility(View.VISIBLE);
+            mChronometer.start();
 
         }
     }
@@ -501,17 +657,19 @@ public class MainActivity<stastic> extends AppCompatActivity implements View.OnC
         mMediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
         mMediaRecorder.setOutputFile(mVideoFileName);
         mMediaRecorder.setVideoEncodingBitRate(10000000);
-        mMediaRecorder.setVideoEncodingBitRate(30);
+        mMediaRecorder.setVideoFrameRate(30);
         mMediaRecorder.setVideoSize(mVideoSize.getWidth(), mVideoSize.getHeight());
         mMediaRecorder.setVideoEncoder(MediaRecorder.VideoEncoder.H264);
         mMediaRecorder.setOrientationHint(mTotalRotation);
         mMediaRecorder.prepare();
-
-
-
     }
 
-
+    private void lockFocus() throws CameraAccessException
+    {
+        mCaptureState = STATE_WAIT_LOCK;
+        mCaptureRequestBuilder.set(CaptureRequest.CONTROL_AF_TRIGGER,CaptureRequest.CONTROL_AF_TRIGGER_START); //Check for zoom
+        mPreviewCaptureSession.capture(mCaptureRequestBuilder.build(), mPreviewCaptureCallback, mBackgroundHandler);//Check for UDO
+    }
 
 
 
