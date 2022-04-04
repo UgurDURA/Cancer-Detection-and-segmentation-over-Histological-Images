@@ -18,8 +18,10 @@ import android.hardware.camera2.CameraDevice;
 import android.hardware.camera2.CameraManager;
 import android.hardware.camera2.CaptureRequest;
 import android.hardware.camera2.params.StreamConfigurationMap;
+import android.icu.text.SimpleDateFormat;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Environment;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.util.Size;
@@ -30,10 +32,14 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.List;
 
 
@@ -41,6 +47,7 @@ public class MainActivity<stastic> extends AppCompatActivity implements View.OnC
 
 
     private static final int REQUEST_CAMERA_PERMISSION_RESULT = 0;
+    private static final int REQUEST_WRITE_EXTERNAL_STORAGE_PERMISSION_RESULT = 1;
     private TextureView mTextureView;
     public static ArrayList<String> logList = new ArrayList<>();
     public static String text2 = "App Started";
@@ -89,6 +96,12 @@ public class MainActivity<stastic> extends AppCompatActivity implements View.OnC
     Button bTakePicture, bRecording;
     private TextView nameText;
     private CameraDevice mCameraDevice;
+
+    private File mVideoFolder;
+    private String mVideoFileName;
+
+
+
     private CameraDevice.StateCallback mCameraDeviceStateCallback = new CameraDevice.StateCallback() {
         @Override
         public void onOpened(@NonNull CameraDevice camera)
@@ -236,7 +249,7 @@ public class MainActivity<stastic> extends AppCompatActivity implements View.OnC
 
             mPreviewSize = optimalSize(map.getOutputSizes(SurfaceTexture.class), rotateWidth, rotateHeight);
 
-            mcameraID = "1"; //Manually provided camera ID
+            mcameraID = "0"; //Manually provided camera ID
 
             log("Current Camera ID is: " + mcameraID);
             log("Camera ID is: " + cameraID);
@@ -336,8 +349,12 @@ public class MainActivity<stastic> extends AppCompatActivity implements View.OnC
 
                 else
                 {
-                    mIsRecording = true;
-                    bRecording.setBackgroundColor(Color.RED);
+                    try {
+                        checkWritePermission();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+
                 }
 
             }
@@ -379,6 +396,33 @@ public class MainActivity<stastic> extends AppCompatActivity implements View.OnC
                 log("Application requires camera permission");
             }
         }
+        if (requestCode == REQUEST_WRITE_EXTERNAL_STORAGE_PERMISSION_RESULT)
+        {
+            if(grantResults[0] == PackageManager.PERMISSION_GRANTED)
+            {
+                Toast.makeText(getApplicationContext(),"Application will not run without external storage access",Toast.LENGTH_SHORT).show();
+                log("Application requires storage access permission");
+
+                mIsRecording = true;
+                bRecording.setBackgroundColor(Color.RED);
+                log("External storage access permission succesfully granted");
+
+
+                try {
+                    createVideoFileName();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+
+
+
+
+            }
+            else
+            {
+                log("App requires storage permission ");
+            }
+        }
     }
 
     protected void onPause()
@@ -395,12 +439,55 @@ public class MainActivity<stastic> extends AppCompatActivity implements View.OnC
     }
 
 
-//    private void createVideoFolder()
-//    {
-//        File movieFile = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MOVIES);
-//
-//        mVideoFolder = new File(movieFile, "MicrosPhone_Images");
-//    }
+    private void createVideoFolder()
+    {
+        File movieFile = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MOVIES);
+
+        mVideoFolder = new File(movieFile, "MicrosPhone_Images");
+
+        if(!mVideoFolder.exists())
+        {
+            mVideoFolder.mkdirs();
+        }
+    }
+
+    private File createVideoFileName() throws IOException {
+        String timestamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
+        String prepend = "VIDEO_"+timestamp + "_" ;
+        File videoFile = File.createTempFile(prepend, ".mp4",mVideoFolder);
+        mVideoFileName = videoFile.getAbsolutePath();
+        return videoFile;
+
+    }
+
+    private void checkWritePermission() throws IOException {
+        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.M)
+        {
+            if(ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE)
+            == PackageManager.PERMISSION_GRANTED)
+            {
+                mIsRecording = true;
+                bRecording.setBackgroundColor(Color.RED);
+                createVideoFileName();
+
+            }
+            else
+            {
+                if(shouldShowRequestPermissionRationale(Manifest.permission.WRITE_EXTERNAL_STORAGE))
+                {
+                    Toast.makeText(this, "App needs to be able to access save storage", Toast.LENGTH_SHORT).show();
+                }
+                requestPermissions(new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE},REQUEST_WRITE_EXTERNAL_STORAGE_PERMISSION_RESULT);
+            }
+        }
+        else
+        {
+            mIsRecording = true;
+            bRecording.setBackgroundColor(Color.RED);
+            createVideoFileName();
+
+        }
+    }
 
 
 
