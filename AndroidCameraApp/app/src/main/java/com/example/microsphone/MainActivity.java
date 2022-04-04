@@ -2,19 +2,14 @@ package com.example.microsphone;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.camera.core.CameraSelector;
-import androidx.camera.core.ImageCapture;
-import androidx.camera.core.ImageCaptureException;
-import androidx.camera.core.Preview;
-import androidx.camera.lifecycle.ProcessCameraProvider;
-import androidx.camera.view.PreviewView;
-import androidx.core.app.ActivityCompat;
+
 import androidx.core.content.ContextCompat;
-import androidx.lifecycle.LifecycleOwner;
+
 
 import android.Manifest;
 import android.content.Context;
 import android.content.pm.PackageManager;
+import android.graphics.Color;
 import android.graphics.SurfaceTexture;
 import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraCaptureSession;
@@ -25,7 +20,6 @@ import android.hardware.camera2.CaptureRequest;
 import android.hardware.camera2.params.StreamConfigurationMap;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.Environment;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.util.Size;
@@ -36,23 +30,14 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
-
-import com.google.common.util.concurrent.ListenableFuture;
-
-import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.Date;
 import java.util.List;
-import java.util.Set;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Executor;
+
 
 public class MainActivity<stastic> extends AppCompatActivity implements View.OnClickListener {
-
-    private ListenableFuture<ProcessCameraProvider> cameraProviderFuture;
 
 
     private static final int REQUEST_CAMERA_PERMISSION_RESULT = 0;
@@ -60,6 +45,15 @@ public class MainActivity<stastic> extends AppCompatActivity implements View.OnC
     public static ArrayList<String> logList = new ArrayList<>();
     public static String text2 = "App Started";
     public static int i;
+    private String mcameraID;
+    private Size mPreviewSize;
+    private HandlerThread mBackgroundHandlerThread;
+    private Handler mBackgroundHandler;
+    private static SparseIntArray ORIENTATIONS = new SparseIntArray();
+    private CaptureRequest.Builder mCaptureRequestBuilder;
+
+    private Button mRecordImageButton;
+    private boolean mIsRecording = false;
 
     private TextureView.SurfaceTextureListener mSurfaceTextureListener = new TextureView.SurfaceTextureListener() {
         @Override
@@ -124,13 +118,6 @@ public class MainActivity<stastic> extends AppCompatActivity implements View.OnC
 
         }
     };
-
-    private String mcameraID;
-    private Size mPreviewSize;
-    private HandlerThread mBackgroundHandlerThread;
-    private Handler mBackgroundHandler;
-    private static SparseIntArray ORIENTATIONS = new SparseIntArray();
-    private CaptureRequest.Builder mCaptureRequestBuilder;
 
 
     static {
@@ -216,15 +203,10 @@ public class MainActivity<stastic> extends AppCompatActivity implements View.OnC
     private void setupCamera(int width, int height) throws CameraAccessException {
         CameraManager cameraManager = (CameraManager) getSystemService(Context.CAMERA_SERVICE);
 
-
-
         String[] cameraIds =  cameraManager.getCameraIdList();
-
-
         for (int i = 0; i <cameraIds.length;i++){
             log(cameraIds[i]);
         }
-
 
         for (String cameraID : cameraManager.getCameraIdList()) {
             CameraCharacteristics cameraCharacteristics = cameraManager.getCameraCharacteristics(cameraID);
@@ -254,19 +236,12 @@ public class MainActivity<stastic> extends AppCompatActivity implements View.OnC
 
             mPreviewSize = optimalSize(map.getOutputSizes(SurfaceTexture.class), rotateWidth, rotateHeight);
 
-            mcameraID = "0";
+            mcameraID = "1"; //Manually provided camera ID
 
             log("Current Camera ID is: " + mcameraID);
-
-
-
             log("Camera ID is: " + cameraID);
             log("Device Camera Hardware Level: " + b);
-
-
-
             return;
-
         }
     }
 
@@ -343,17 +318,30 @@ public class MainActivity<stastic> extends AppCompatActivity implements View.OnC
 
         mTextureView = (TextureView) findViewById(R.id.textureView);
         bTakePicture = findViewById(R.id.bCapture);
+
         bRecording = findViewById(R.id.bRecord);
         nameText = findViewById(R.id.logView);
+        bTakePicture.setBackgroundColor(Color.BLUE);
+        bRecording.setBackgroundColor(Color.BLUE);
 
+        bRecording.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v)
+            {
+                if(mIsRecording)
+                {
+                    mIsRecording = false;
+                    bRecording.setBackgroundColor(Color.BLUE);
+                }
 
+                else
+                {
+                    mIsRecording = true;
+                    bRecording.setBackgroundColor(Color.RED);
+                }
 
-
-
-
-
-
-
+            }
+        });
 
     }
     @Override
@@ -405,6 +393,14 @@ public class MainActivity<stastic> extends AppCompatActivity implements View.OnC
 
 
     }
+
+
+//    private void createVideoFolder()
+//    {
+//        File movieFile = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MOVIES);
+//
+//        mVideoFolder = new File(movieFile, "MicrosPhone_Images");
+//    }
 
 
 
