@@ -624,6 +624,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 createVideoFileName();
                 startRecord();
                 mMediaRecorder.start();
+                mChronometer.setBase(SystemClock.elapsedRealtime());
+                mChronometer.setVisibility(View.VISIBLE);
                 mChronometer.start();
 
 
