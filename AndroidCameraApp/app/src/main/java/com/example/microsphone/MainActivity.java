@@ -8,6 +8,7 @@ import androidx.core.content.ContextCompat;
 
 import android.Manifest;
 import android.content.Context;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.graphics.ImageFormat;
@@ -38,6 +39,7 @@ import android.view.TextureView;
 import android.view.View;
 import android.widget.Button;
 import android.widget.Chronometer;
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -62,6 +64,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private static final int STATE_PREVIEW = 0;
     private static final int STATE_WAIT_LOCK = 1;
     private int mCaptureState = STATE_PREVIEW;
+    private static final String IMAGE_FILE_LOCATION = "image_file_location";
 
     private TextureView mTextureView;
     public static ArrayList<String> logList = new ArrayList<>();
@@ -72,9 +75,28 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private Size mVideoSize;
     private Size mImageSize;
     private ImageReader mImageReader;
+
+    private ImageView mPhotoCapturedImageView;
+    private String mImageFileLocation = "";
+    private File mGalleryFolder;
+    private static File mImageFile;
+    private String GALLERY_LOCATION = "image gallery";
+
+    private File mRawGalleryFolder;
+    private static File mRawImageFile;
+
+    private CameraCharacteristics mCameraCharacteristics;
+
+    private Button gallery;
+
+
+
+
     private final ImageReader.OnImageAvailableListener mOnImageAvailableListener = new ImageReader.OnImageAvailableListener() {
         @Override
-        public void onImageAvailable(ImageReader reader) {
+        public void onImageAvailable(ImageReader reader)
+        {
+//            mBackgroundHandler.post(new ImageSaver(mActivity, reader.acquireNextImage(), mUiHandler));
 
         }
     };
@@ -225,12 +247,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     }
 
-    private static class CompareSizeByArea implements Comparator<Size> {
-        @Override
-        public int compare(Size lhs, Size rhs) {
-            return (int) (Long.signum((long) lhs.getWidth() * lhs.getHeight()) / (long) rhs.getWidth() * rhs.getHeight());
-        }
-    }
 
 
     @Override
@@ -333,8 +349,11 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             mImageReader = mImageReader.newInstance(mImageSize.getWidth(), mImageSize.getHeight(), ImageFormat.JPEG,1);
 
             mImageReader.setOnImageAvailableListener(mOnImageAvailableListener, mBackgroundHandler);
+            mPreviewSize = optimalSize(map.getOutputSizes(SurfaceTexture.class), width, height);
 
             mcameraID = "0"; //Manually provided camera ID
+
+            mCameraCharacteristics = cameraCharacteristics;
 
             log("Current Camera ID is: " + mcameraID);
             log("Camera ID is: " + cameraID);
@@ -453,7 +472,21 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        gallery = findViewById(R.id.bGallery);
+
+        gallery.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v)
+            {
+                Intent intent = new Intent(MainActivity.this, Gallery_Layout.class);
+                startActivity(intent);
+            }
+        });
+
+
         createVideoFolder();
+        createImageGallery();
+
 
         mMediaRecorder = new MediaRecorder();
 
@@ -672,6 +705,70 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         mCaptureRequestBuilder.set(CaptureRequest.CONTROL_AF_TRIGGER,CaptureRequest.CONTROL_AF_TRIGGER_START); //Check for zoom
         mPreviewCaptureSession.capture(mCaptureRequestBuilder.build(), mPreviewCaptureCallback, mBackgroundHandler);//Check for UDO
     }
+
+    private static class CompareSizeByArea implements Comparator<Size> {
+        @Override
+        public int compare(Size lhs, Size rhs) {
+            return (int) (Long.signum((long) lhs.getWidth() * lhs.getHeight()) / (long) rhs.getWidth() * rhs.getHeight());
+        }
+    }
+
+
+    private static Boolean cotains(int[] modes, int mode)
+    {
+        if(modes == null)
+        {
+            return false;
+        }
+        for(int i : modes)
+        {
+            if(i == mode)
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private void createImageGallery()
+    {
+        File storageDirectory = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES);
+        mGalleryFolder = new File(storageDirectory, "JPEG Images");
+        mRawGalleryFolder = new File(storageDirectory, "Raw Images");
+        if(!mGalleryFolder.exists())
+        {
+            mGalleryFolder.mkdirs();
+        }
+        if(!mRawGalleryFolder.exists())
+        {
+            mRawGalleryFolder.mkdirs();
+        }
+
+
+    }
+
+    File createImageFile() throws IOException {
+        String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
+        String imageFileName = "JPEG_"+timeStamp+"_";
+
+        File image = File.createTempFile(imageFileName, ".jpg", mGalleryFolder);
+        return image;
+    }
+
+    File createRawImageFile() throws IOException {
+        String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
+        String imageFileName = "RAW_"+timeStamp+"_";
+
+        File image = File.createTempFile(imageFileName, ".dng", mRawGalleryFolder);
+        return image;
+    }
+
+
+
+
+
+
+
 
 
 
