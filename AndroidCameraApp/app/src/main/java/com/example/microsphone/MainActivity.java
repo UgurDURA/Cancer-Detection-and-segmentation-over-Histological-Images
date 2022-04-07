@@ -33,6 +33,7 @@ import android.os.Environment;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.SystemClock;
+import android.provider.ContactsContract;
 import android.util.Size;
 import android.util.SparseIntArray;
 import android.view.Surface;
@@ -52,7 +53,10 @@ import java.io.IOException;
 
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
 import java.net.Socket;
+import java.net.SocketException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -514,6 +518,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         bTakePicture.setBackgroundColor(Color.BLUE);
         bRecording.setBackgroundColor(Color.BLUE);
 
+
         bSend.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -783,14 +788,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         return image;
     }
 
-
-    public void send( View view)
-    {
-        SocketToPc send = new SocketToPc();
-        send.execute(sendText.getText().toString());
-
-    }
-
     class SocketToPc extends AsyncTask <String, Void, String>
     {
 
@@ -798,30 +795,52 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         @Override
         protected String doInBackground(String... strings)
         {
-            Socket msocket;
-            InputStreamReader minputStreamReader;
-            BufferedReader mBufferReader;
-            PrintWriter mprintWriter;
-            String result;
 
-            try
-            {
-                msocket = new Socket("192.168.1.8",5555);
-                minputStreamReader = new InputStreamReader(msocket.getInputStream());
-                mBufferReader = new BufferedReader(minputStreamReader);
+            try {
+                DatagramSocket server = new DatagramSocket(5555);
+                byte[] buf = new byte[256];
+                DatagramPacket packet = new DatagramPacket(buf, buf.length);
+                server.receive(packet);
+                String response = new String(packet.getData());
+                return response;
 
-                mprintWriter = new PrintWriter(msocket.getOutputStream());
-
-                mprintWriter.println(strings[0]);
-                mprintWriter.flush();
-
-                result = mBufferReader.readLine();
-
-                return result;
-            } catch (Exception e) {
+            } catch (SocketException e) {
                 e.printStackTrace();
-                return "anan";
+                return null;
+            } catch (IOException e) {
+                e.printStackTrace();
+                return null;
             }
+
+//            Socket msocket;
+//            InputStreamReader minputStreamReader;
+//            BufferedReader mBufferReader;
+//            PrintWriter mprintWriter;
+//            String result;
+
+//            try
+//            {
+//                msocket = new Socket("192.168.1.8",5555);
+//                minputStreamReader = new InputStreamReader(msocket.getInputStream());
+//                mBufferReader = new BufferedReader(minputStreamReader);
+//
+//                mprintWriter = new PrintWriter(msocket.getOutputStream());
+//
+//                mprintWriter.println(strings[0]);
+//                mprintWriter.flush();
+//
+//                result = mBufferReader.readLine();
+//
+//                msocket.close();
+//                minputStreamReader.close();
+//                mBufferReader.close();
+//                mprintWriter.close();
+//
+//                return result;
+//            } catch (Exception e) {
+//                e.printStackTrace();
+//                return null;
+//            }
 
 
 
