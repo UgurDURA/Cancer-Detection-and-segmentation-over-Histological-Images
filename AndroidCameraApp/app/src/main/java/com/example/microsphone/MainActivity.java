@@ -26,6 +26,7 @@ import android.icu.text.SimpleDateFormat;
 
 import android.media.ImageReader;
 import android.media.MediaRecorder;
+import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
@@ -39,14 +40,19 @@ import android.view.TextureView;
 import android.view.View;
 import android.widget.Button;
 import android.widget.Chronometer;
+import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.io.BufferedReader;
 import java.io.File;
 
 import java.io.IOException;
 
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
+import java.net.Socket;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -141,9 +147,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         }
     };
 
-    Button bTakePicture, bRecording;
-    private TextView nameText;
+    Button bTakePicture, bRecording, bSend;
+    private TextView nameText, ipText;
     private CameraDevice mCameraDevice;
+    EditText sendText;
 
     private File mVideoFolder;
     private String mVideoFileName;
@@ -498,9 +505,22 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         mChronometer = (Chronometer) findViewById(R.id.chronometer);
         bRecording = findViewById(R.id.bRecord);
         nameText = findViewById(R.id.logView);
+        bSend = findViewById(R.id.bSend);
+        sendText = (EditText) findViewById(R.id.textMessage);
+        ipText = (TextView) findViewById(R.id.ipText);
+
+
 
         bTakePicture.setBackgroundColor(Color.BLUE);
         bRecording.setBackgroundColor(Color.BLUE);
+
+        bSend.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                SocketToPc send = new SocketToPc();
+                send.execute(sendText.getText().toString());
+            }
+        });
 
         bRecording.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -761,6 +781,58 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         File image = File.createTempFile(imageFileName, ".dng", mRawGalleryFolder);
         return image;
+    }
+
+
+    public void send( View view)
+    {
+        SocketToPc send = new SocketToPc();
+        send.execute(sendText.getText().toString());
+
+    }
+
+    class SocketToPc extends AsyncTask <String, Void, String>
+    {
+
+
+        @Override
+        protected String doInBackground(String... strings)
+        {
+            Socket msocket;
+            InputStreamReader minputStreamReader;
+            BufferedReader mBufferReader;
+            PrintWriter mprintWriter;
+            String result;
+
+            try
+            {
+                msocket = new Socket("192.168.1.8",5555);
+                minputStreamReader = new InputStreamReader(msocket.getInputStream());
+                mBufferReader = new BufferedReader(minputStreamReader);
+
+                mprintWriter = new PrintWriter(msocket.getOutputStream());
+
+                mprintWriter.println(strings[0]);
+                mprintWriter.flush();
+
+                result = mBufferReader.readLine();
+
+                return result;
+            } catch (Exception e) {
+                e.printStackTrace();
+                return "anan";
+            }
+
+
+
+        }
+
+        @Override
+        protected void onPostExecute(String s)
+        {
+            super.onPostExecute(s);
+            ipText.setText(s);
+        }
     }
 
 

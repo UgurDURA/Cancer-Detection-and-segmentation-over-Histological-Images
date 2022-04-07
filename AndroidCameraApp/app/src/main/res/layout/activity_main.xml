@@ -86,6 +86,45 @@
             </LinearLayout>
         </ScrollView>
 
+        <TextView
+            android:id="@+id/ipText"
+            android:layout_width="77dp"
+            android:layout_height="22dp"
+            android:layout_alignParentStart="true"
+            android:layout_alignParentTop="true"
+            android:layout_alignParentBottom="true"
+            android:layout_marginStart="26dp"
+            android:layout_marginTop="13dp"
+            android:layout_marginBottom="165dp"
+            android:text="IP Add: "
+            android:textSize="10sp" />
+
+        <EditText
+            android:id="@+id/textMessage"
+            android:layout_width="153dp"
+            android:layout_height="30dp"
+            android:layout_alignParentTop="true"
+            android:layout_alignParentEnd="true"
+            android:layout_marginTop="8dp"
+            android:layout_marginEnd="119dp"
+            android:ems="10"
+            android:hint="write your message"
+            android:inputType="textPersonName"
+            android:textSize="10sp" />
+
+        <Button
+            android:id="@+id/bSend"
+            android:layout_width="121dp"
+            android:layout_height="33dp"
+            android:layout_alignParentStart="true"
+            android:layout_alignParentBottom="true"
+            android:layout_marginStart="147dp"
+            android:layout_marginBottom="126dp"
+            android:text="Send"
+            android:textSize="10sp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent" />
+
     </RelativeLayout>
 
     <Button
