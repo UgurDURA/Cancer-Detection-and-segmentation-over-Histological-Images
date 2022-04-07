@@ -98,7 +98,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         {
 //            mBackgroundHandler.post(new ImageSaver(mActivity, reader.acquireNextImage(), mUiHandler));
 
-        }
+         }
     };
     private MediaRecorder mMediaRecorder;
     private Chronometer mChronometer;
