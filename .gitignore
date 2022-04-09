@@ -2,3 +2,5 @@
 *.gradle
 *.bat
 AndroidCameraApp/.DS_Store
+*.jpg
+*.png
