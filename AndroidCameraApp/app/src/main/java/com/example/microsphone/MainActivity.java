@@ -24,6 +24,7 @@ import android.hardware.camera2.TotalCaptureResult;
 import android.hardware.camera2.params.StreamConfigurationMap;
 import android.icu.text.SimpleDateFormat;
 
+import android.media.Image;
 import android.media.ImageReader;
 import android.media.MediaRecorder;
 import android.os.AsyncTask;
@@ -46,17 +47,25 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
+import java.io.DataOutputStream;
 import java.io.File;
 
+import java.io.FileInputStream;
 import java.io.IOException;
 
+import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.ObjectOutputStream;
+import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.Socket;
 import java.net.SocketException;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -82,9 +91,16 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     public static int i;
     private String mcameraID;
     private Size mPreviewSize;
+
     private Size mVideoSize;
     private Size mImageSize;
     private ImageReader mImageReader;
+    private final ImageReader.OnImageAvailableListener mOnImageAvailableListener = new ImageReader.OnImageAvailableListener() {
+        @Override
+        public void onImageAvailable(ImageReader reader) {
+
+        }
+    };
 
     private ImageView mPhotoCapturedImageView;
     private String mImageFileLocation = "";
@@ -115,6 +131,33 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private HandlerThread mBackgroundHandlerThread;
     private Handler mBackgroundHandler;
     private static SparseIntArray ORIENTATIONS = new SparseIntArray();
+
+    private CameraCaptureSession mPreviewCaptureSession;
+    private CameraCaptureSession.CaptureCallback mPreviewCaptureCallback = new CameraCaptureSession.CaptureCallback() {
+
+        private void process (CaptureResult captureResult)
+        {
+            switch (mCaptureState)
+            {
+                case STATE_PREVIEW:
+                    //Do nothing
+                    break;
+                case STATE_WAIT_LOCK:
+                    Integer afState
+
+                    break;
+
+
+            }
+        }
+        @Override
+        public void onCaptureCompleted(@NonNull CameraCaptureSession session, @NonNull CaptureRequest request, @NonNull TotalCaptureResult result) {
+            super.onCaptureCompleted(session, request, result);
+
+            process(result);
+
+        }
+    };
     private CaptureRequest.Builder mCaptureRequestBuilder;
 
 
@@ -362,7 +405,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             mImageReader.setOnImageAvailableListener(mOnImageAvailableListener, mBackgroundHandler);
             mPreviewSize = optimalSize(map.getOutputSizes(SurfaceTexture.class), width, height);
 
-            mcameraID = "0"; //Manually provided camera ID
+            mcameraID = "1"; //Manually provided camera ID
 
             mCameraCharacteristics = cameraCharacteristics;
 
@@ -470,6 +513,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     }
                 }, null);
 
+
+
     }
 
 
@@ -519,13 +564,33 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         bRecording.setBackgroundColor(Color.BLUE);
 
 
-        bSend.setOnClickListener(new View.OnClickListener() {
+      bSend.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onClick(View v) {
+             public void onClick(View arg0) {
                 SocketToPc send = new SocketToPc();
+
                 send.execute(sendText.getText().toString());
-            }
+
+////                sendImage send2 = new sendImage();
+////
+////                int image = CameraDevice.TEMPLATE_PREVIEW;
+////
+////
+////                send2.execute(image);
+//                new SendImageTask().execute();
+//
+//
+           }
         });
+//        bSend.setOnClickListener(new View.OnClickListener() {
+//
+//            @Override
+//            public void onClick(View arg0) {
+//
+//                new SendImageTask().execute();
+//
+//            }
+//        });
 
         bRecording.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -796,51 +861,36 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         protected String doInBackground(String... strings)
         {
 
-            try {
-                DatagramSocket server = new DatagramSocket(5555);
-                byte[] buf = new byte[256];
-                DatagramPacket packet = new DatagramPacket(buf, buf.length);
-                server.receive(packet);
-                String response = new String(packet.getData());
-                return response;
 
-            } catch (SocketException e) {
-                e.printStackTrace();
-                return null;
-            } catch (IOException e) {
+            Socket msocket;
+            InputStreamReader minputStreamReader;
+            BufferedReader mBufferReader;
+            PrintWriter mprintWriter;
+            String result;
+
+            try
+            {
+                msocket = new Socket("192.168.1.8",5555);
+                minputStreamReader = new InputStreamReader(msocket.getInputStream());
+                mBufferReader = new BufferedReader(minputStreamReader);
+
+                mprintWriter = new PrintWriter(msocket.getOutputStream());
+
+                mprintWriter.println(strings[0]);
+                mprintWriter.flush();
+
+                result = mBufferReader.readLine();
+
+                msocket.close();
+                minputStreamReader.close();
+                mBufferReader.close();
+                mprintWriter.close();
+
+                return result;
+            } catch (Exception e) {
                 e.printStackTrace();
                 return null;
             }
-
-//            Socket msocket;
-//            InputStreamReader minputStreamReader;
-//            BufferedReader mBufferReader;
-//            PrintWriter mprintWriter;
-//            String result;
-
-//            try
-//            {
-//                msocket = new Socket("192.168.1.8",5555);
-//                minputStreamReader = new InputStreamReader(msocket.getInputStream());
-//                mBufferReader = new BufferedReader(minputStreamReader);
-//
-//                mprintWriter = new PrintWriter(msocket.getOutputStream());
-//
-//                mprintWriter.println(strings[0]);
-//                mprintWriter.flush();
-//
-//                result = mBufferReader.readLine();
-//
-//                msocket.close();
-//                minputStreamReader.close();
-//                mBufferReader.close();
-//                mprintWriter.close();
-//
-//                return result;
-//            } catch (Exception e) {
-//                e.printStackTrace();
-//                return null;
-//            }
 
 
 
@@ -853,7 +903,80 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             ipText.setText(s);
         }
     }
+class sendImage extends AsyncTask
+{
 
+    @Override
+    protected Object doInBackground(Object[] objects)
+    {
+        Socket msocket;
+
+        try
+        {
+            msocket = new Socket("192.168.1.8",5555);
+            String file = String.valueOf(objects[0]);
+
+
+            DataOutputStream oos = new DataOutputStream(msocket.getOutputStream());
+            File myFile = new File (file);
+            byte [] mybytearray  = new byte [(int) myFile.length()];
+            FileInputStream fis = new FileInputStream(myFile);
+            BufferedInputStream bis = new BufferedInputStream(fis);
+            bis.read(mybytearray,0,mybytearray.length);
+            OutputStream os = msocket.getOutputStream();
+            System.out.println("Sending...");
+            os.write(mybytearray,0,mybytearray.length);
+            os.flush();
+
+            msocket.close();
+
+//            oos.write((byte[]) objects[0]);
+//
+//            msocket.close();
+//            oos.flush();
+//            oos.close();
+
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+        return null;
+    }
+}
+
+    class SendImageTask extends AsyncTask<Void, Void, Void> {
+
+
+        @Override
+        protected Void doInBackground(Void... voids) {
+            Socket sock;
+            try {
+                sock = new Socket("192.168.1.8", 8000);
+                System.out.println("Connecting...");
+
+                // sendfilee
+
+//                byte [] mybytearray  = new byte [(int)myFile.length()];
+//                InputStream is = getContentResolver().openInputStream(myFile.getData());
+//                BufferedInputStream bis = new BufferedInputStream(fis);
+//                bis.read(mybytearray,0,mybytearray.length);
+//                OutputStream os = sock.getOutputStream();
+//                System.out.println("Sending...");
+//                os.write(mybytearray,0,mybytearray.length);
+//                os.flush();
+
+                sock.close();
+            } catch (UnknownHostException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            } catch (IOException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
+            return null;
+        }
+    }
 
 
 
