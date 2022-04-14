@@ -54,6 +54,8 @@ import java.io.DataOutputStream;
 import java.io.File;
 
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 
 import java.io.InputStream;
@@ -66,6 +68,7 @@ import java.net.DatagramSocket;
 import java.net.Socket;
 import java.net.SocketException;
 import java.net.UnknownHostException;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -97,10 +100,50 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private ImageReader mImageReader;
     private final ImageReader.OnImageAvailableListener mOnImageAvailableListener = new ImageReader.OnImageAvailableListener() {
         @Override
-        public void onImageAvailable(ImageReader reader) {
+        public void onImageAvailable(ImageReader reader)
+        {
+            mBackgroundHandler.post(new ImageSaver(reader.acquireLatestImage()));
+
 
         }
     };
+    private class ImageSaver implements Runnable
+    {
+        private final Image mImage;
+
+        public ImageSaver(Image image)
+        {
+            mImage = image;
+        }
+
+        @Override
+        public void run()
+        {
+            ByteBuffer byteBuffer = mImage.getPlanes()[0].getBuffer(); //Image data stored
+            byte[] bytes = new byte[byteBuffer.remaining()];
+            byteBuffer.get(bytes);
+
+            FileOutputStream fileOutputStream = null;
+            try {
+                fileOutputStream = new FileOutputStream(mImageFileName);
+                fileOutputStream.write(bytes);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }finally {
+                mImage.close();
+                if(fileOutputStream != null)
+                {
+                    try {
+                        fileOutputStream.close();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+
+
+        }
+    }
 
     private ImageView mPhotoCapturedImageView;
     private String mImageFileLocation = "";
@@ -125,8 +168,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private CameraCaptureSession mPreviewCaptureSession;
     private CameraCaptureSession.CaptureCallback mPreviewCaptureCallback = new CameraCaptureSession.CaptureCallback() {
 
-        private void process (CaptureResult captureResult)
-        {
+        private void process (CaptureResult captureResult) throws CameraAccessException {
             switch (mCaptureState)
             {
                 case STATE_PREVIEW:
@@ -138,6 +180,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     if(afState == CaptureResult.CONTROL_AF_STATE_FOCUSED_LOCKED || afState == CaptureResult.CONTROL_AF_STATE_NOT_FOCUSED_LOCKED)
                     {
                         Toast.makeText(getApplicationContext(), "Auto Focus Locked!",Toast.LENGTH_SHORT).show();
+                        startStillCaptureRequest();
                     }
 
                     break;
@@ -149,7 +192,11 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         public void onCaptureCompleted(@NonNull CameraCaptureSession session, @NonNull CaptureRequest request, @NonNull TotalCaptureResult result) {
             super.onCaptureCompleted(session, request, result);
 
-            process(result);
+            try {
+                process(result);
+            } catch (CameraAccessException e) {
+                e.printStackTrace();
+            }
 
         }
     };
@@ -475,6 +522,29 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     }
 
+    private void startStillCaptureRequest() throws CameraAccessException
+    {
+        mCaptureRequestBuilder = mCameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_STILL_CAPTURE);
+        mCaptureRequestBuilder.addTarget(mImageReader.getSurface());
+        mCaptureRequestBuilder.set(CaptureRequest.JPEG_ORIENTATION, mTotalRotation);
+
+
+        CameraCaptureSession.CaptureCallback stillCaptureCallback = new CameraCaptureSession.CaptureCallback() {
+            @Override
+            public void onCaptureStarted(@NonNull CameraCaptureSession session, @NonNull CaptureRequest request, long timestamp, long frameNumber) {
+                super.onCaptureStarted(session, request, timestamp, frameNumber);
+                try {
+                    createImageFileName();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        };
+
+        mPreviewCaptureSession.capture(mCaptureRequestBuilder.build(), stillCaptureCallback,null);
+
+    }
+
 
 
 
@@ -499,7 +569,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
 
         createVideoFolder();
-        createImageGallery();
+        createImageFolder();
 
 
         mMediaRecorder = new MediaRecorder();
@@ -690,6 +760,27 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         File videoFile = File.createTempFile(prepend, ".mp4",mVideoFolder);
         mVideoFileName = videoFile.getAbsolutePath();
         return videoFile;
+
+    }
+
+    private void createImageFolder()
+    {
+        File imageFile = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES);
+
+        mImageFolder = new File(imageFile, "MicrosPhone_Images");
+
+        if(!mImageFolder.exists())
+        {
+            mImageFolder.mkdirs();
+        }
+    }
+
+    private File createImageFileName() throws IOException {
+        String timestamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
+        String prepend = "IMAGE_"+timestamp + "_" ;
+        File imageFile = File.createTempFile(prepend, ".png",mImageFolder);
+        mImageFileName = imageFile.getAbsolutePath();
+        return imageFile;
 
     }
 
