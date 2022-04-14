@@ -116,16 +116,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private Button gallery;
 
 
-
-
-    private final ImageReader.OnImageAvailableListener mOnImageAvailableListener = new ImageReader.OnImageAvailableListener() {
-        @Override
-        public void onImageAvailable(ImageReader reader)
-        {
-//            mBackgroundHandler.post(new ImageSaver(mActivity, reader.acquireNextImage(), mUiHandler));
-
-         }
-    };
     private MediaRecorder mMediaRecorder;
     private Chronometer mChronometer;
     private HandlerThread mBackgroundHandlerThread;
@@ -143,7 +133,12 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     //Do nothing
                     break;
                 case STATE_WAIT_LOCK:
-                    Integer afState
+                    mCaptureState = STATE_PREVIEW;
+                    Integer afState = captureResult.get(CaptureResult.CONTROL_AF_STATE);
+                    if(afState == CaptureResult.CONTROL_AF_STATE_FOCUSED_LOCKED || afState == CaptureResult.CONTROL_AF_STATE_NOT_FOCUSED_LOCKED)
+                    {
+                        Toast.makeText(getApplicationContext(), "Auto Focus Locked!",Toast.LENGTH_SHORT).show();
+                    }
 
                     break;
 
@@ -202,47 +197,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private File mVideoFolder;
     private String mVideoFileName;
 
-
-
+    private File mImageFolder;
+    private String mImageFileName;
 
     private int mTotalRotation;
-
-
-
-
-    private CameraCaptureSession mPreviewCaptureSession;
-    private CameraCaptureSession.CaptureCallback mPreviewCaptureCallback = new CameraCaptureSession.CaptureCallback() {
-
-        private void process(CaptureResult captureResult) throws CameraAccessException {
-            switch (mCaptureState)
-            {
-                case STATE_PREVIEW:
-                    //Do nothing
-                    break;
-                case STATE_WAIT_LOCK:
-                    mCaptureState = STATE_PREVIEW;
-                    Integer afState = captureResult.get(CaptureResult.CONTROL_AF_STATE);
-                    if(afState == CaptureResult.CONTROL_AF_STATE_FOCUSED_LOCKED || afState == CaptureResult.CONTROL_AF_STATE_NOT_FOCUSED_LOCKED)
-                    {
-                        Toast.makeText(getApplicationContext(), "Auto Focus Locked", Toast.LENGTH_SHORT).show();
-
-                    }
-
-                    break;
-
-            }
-
-        }
-        @Override
-        public void onCaptureCompleted(@NonNull CameraCaptureSession session, @NonNull CaptureRequest request, @NonNull TotalCaptureResult result) {
-            super.onCaptureCompleted(session, request, result);
-            try {
-                process(result);
-            } catch (CameraAccessException e) {
-                e.printStackTrace();
-            }
-        }
-    };
 
     private CameraDevice.StateCallback mCameraDeviceStateCallback = new CameraDevice.StateCallback() {
         @Override
@@ -405,7 +363,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             mImageReader.setOnImageAvailableListener(mOnImageAvailableListener, mBackgroundHandler);
             mPreviewSize = optimalSize(map.getOutputSizes(SurfaceTexture.class), width, height);
 
-            mcameraID = "1"; //Manually provided camera ID
+            mcameraID = "0"; //Manually provided camera ID
 
             mCameraCharacteristics = cameraCharacteristics;
 
