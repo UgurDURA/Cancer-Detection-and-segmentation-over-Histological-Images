@@ -10,6 +10,8 @@ import android.Manifest;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.graphics.ImageFormat;
 import android.graphics.SurfaceTexture;
@@ -35,6 +37,7 @@ import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.SystemClock;
 import android.provider.ContactsContract;
+import android.util.Base64;
 import android.util.Size;
 import android.util.SparseIntArray;
 import android.view.Surface;
@@ -50,6 +53,7 @@ import android.widget.Toast;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.File;
 
@@ -69,6 +73,7 @@ import java.net.Socket;
 import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -123,10 +128,15 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             byte[] bytes = new byte[byteBuffer.remaining()];
             byteBuffer.get(bytes);
 
+
             FileOutputStream fileOutputStream = null;
             try {
                 fileOutputStream = new FileOutputStream(mImageFileName);
                 fileOutputStream.write(bytes);
+
+                SendImage sendImage = new SendImage();
+                sendImage.execute(bytes);
+
             } catch (IOException e) {
                 e.printStackTrace();
             }finally {
@@ -236,7 +246,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         }
     };
 
-    Button bTakePicture, bRecording, bSend;
+    Button bTakePicture, bRecording, bSend, bRaw;
     private TextView nameText, ipText;
     private CameraDevice mCameraDevice;
     EditText sendText;
@@ -585,6 +595,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         bSend = findViewById(R.id.bSend);
         sendText = (EditText) findViewById(R.id.textMessage);
         ipText = (TextView) findViewById(R.id.ipText);
+        bRaw = findViewById(R.id.bRaw);
+
 
 
 
@@ -663,7 +675,21 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             }
         });
 
+        bRaw.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v)
+            {
+                try {
+                    lockFocus();
+                } catch (CameraAccessException e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+
     }
+
+
     @Override
     protected void onResume()
     {
@@ -842,7 +868,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     {
         mCaptureState = STATE_WAIT_LOCK;
         mCaptureRequestBuilder.set(CaptureRequest.CONTROL_AF_TRIGGER,CaptureRequest.CONTROL_AF_TRIGGER_START); //Check for zoom
-        mPreviewCaptureSession.capture(mCaptureRequestBuilder.build(), mPreviewCaptureCallback, mBackgroundHandler);//Check for UDO
+        mPreviewCaptureSession.capture(mCaptureRequestBuilder.build(), mPreviewCaptureCallback, mBackgroundHandler);//Check for UDP
     }
 
     private static class CompareSizeByArea implements Comparator<Size> {
@@ -852,55 +878,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         }
     }
 
-
-    private static Boolean cotains(int[] modes, int mode)
-    {
-        if(modes == null)
-        {
-            return false;
-        }
-        for(int i : modes)
-        {
-            if(i == mode)
-            {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private void createImageGallery()
-    {
-        File storageDirectory = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES);
-        mGalleryFolder = new File(storageDirectory, "JPEG Images");
-        mRawGalleryFolder = new File(storageDirectory, "Raw Images");
-        if(!mGalleryFolder.exists())
-        {
-            mGalleryFolder.mkdirs();
-        }
-        if(!mRawGalleryFolder.exists())
-        {
-            mRawGalleryFolder.mkdirs();
-        }
-
-
-    }
-
-    File createImageFile() throws IOException {
-        String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
-        String imageFileName = "JPEG_"+timeStamp+"_";
-
-        File image = File.createTempFile(imageFileName, ".jpg", mGalleryFolder);
-        return image;
-    }
-
-    File createRawImageFile() throws IOException {
-        String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
-        String imageFileName = "RAW_"+timeStamp+"_";
-
-        File image = File.createTempFile(imageFileName, ".dng", mRawGalleryFolder);
-        return image;
-    }
 
     class SocketToPc extends AsyncTask <String, Void, String>
     {
@@ -952,80 +929,78 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             ipText.setText(s);
         }
     }
-class sendImage extends AsyncTask
+class SendImage extends AsyncTask<byte[],Void,Void>
 {
 
     @Override
-    protected Object doInBackground(Object[] objects)
+    protected Void doInBackground(byte[]... voids)
     {
-        Socket msocket;
-
-        try
-        {
-            msocket = new Socket("192.168.1.8",5555);
-            String file = String.valueOf(objects[0]);
+        try {
 
 
-            DataOutputStream oos = new DataOutputStream(msocket.getOutputStream());
-            File myFile = new File (file);
-            byte [] mybytearray  = new byte [(int) myFile.length()];
-            FileInputStream fis = new FileInputStream(myFile);
-            BufferedInputStream bis = new BufferedInputStream(fis);
-            bis.read(mybytearray,0,mybytearray.length);
-            OutputStream os = msocket.getOutputStream();
-            System.out.println("Sending...");
-            os.write(mybytearray,0,mybytearray.length);
-            os.flush();
-
-            msocket.close();
-
-//            oos.write((byte[]) objects[0]);
-//
-//            msocket.close();
-//            oos.flush();
-//            oos.close();
+            byte[] array = voids[0];
 
 
-        } catch (Exception e) {
+
+            Socket socket = new Socket("192.168.1.4",5555);
+            OutputStream outputStream = socket.getOutputStream();
+            ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+            byte[] buf = new byte[100000000];
+            byteArrayOutputStream.write(buf, 0, array.length);
+
+//            dos.write(array.length);
+//            dos.write(array);
+
+            mBackgroundHandler.post(()->
+            {
+                Toast.makeText(getApplicationContext(),"Image sent",Toast.LENGTH_SHORT).show();
+            });
+
+            outputStream.close();
+             byteArrayOutputStream.close();
+            socket.close();
+
+
+        } catch (IOException e) {
             e.printStackTrace();
-            return null;
         }
         return null;
     }
+
 }
 
-    class SendImageTask extends AsyncTask<Void, Void, Void> {
-
-
-        @Override
-        protected Void doInBackground(Void... voids) {
-            Socket sock;
-            try {
-                sock = new Socket("192.168.1.8", 8000);
-                System.out.println("Connecting...");
-
-                // sendfilee
-
-//                byte [] mybytearray  = new byte [(int)myFile.length()];
-//                InputStream is = getContentResolver().openInputStream(myFile.getData());
-//                BufferedInputStream bis = new BufferedInputStream(fis);
-//                bis.read(mybytearray,0,mybytearray.length);
-//                OutputStream os = sock.getOutputStream();
-//                System.out.println("Sending...");
-//                os.write(mybytearray,0,mybytearray.length);
-//                os.flush();
-
-                sock.close();
-            } catch (UnknownHostException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
-            } catch (IOException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
-            }
-            return null;
-        }
-    }
+//    class SendImageTask extends AsyncTask<Void, Void, Void> {
+//
+//
+//        @Override
+//        protected Void doInBackground(Void... voids) {
+//            Socket sock;
+//            try {
+//                sock = new Socket("192.168.1.8", 8000);
+//                System.out.println("Connecting...");
+//
+//                // sendfilee
+//
+////                byte [] mybytearray  = new byte [(int)myFile.length()];
+////                InputStream is = getContentResolver().openInputStream(myFile.getData());
+////                BufferedInputStream bis = new BufferedInputStream(fis);
+////                bis.read(mybytearray,0,mybytearray.length);
+////                OutputStream os = sock.getOutputStream();
+////                System.out.println("Sending...");
+////                os.write(mybytearray,0,mybytearray.length);
+////                os.flush();
+//
+//                sock.close();
+//            } catch (UnknownHostException e) {
+//                // TODO Auto-generated catch block
+//                e.printStackTrace();
+//            } catch (IOException e) {
+//                // TODO Auto-generated catch block
+//                e.printStackTrace();
+//            }
+//            return null;
+//        }
+//    }
 
 
 
