@@ -86,6 +86,7 @@ import java.util.Base64;
 
 
 
+
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
 
     // initialize socket and input output streams
@@ -141,6 +142,11 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 fileOutputStream = new FileOutputStream(mImageFileName);
                 fileOutputStream.write(bytes);
 
+//                Bitmap src=BitmapFactory.decodeFile( "/sdcard/Download/images (1).jpeg");
+//                ByteArrayOutputStream baos = new ByteArrayOutputStream();
+//                src.compress(Bitmap.CompressFormat.JPEG, 100, baos);
+//                byte[] data = baos.toByteArray();
+
                 SendImage sendImage = new SendImage();
 
 //                byte[] values = new byte[6];
@@ -172,6 +178,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         }
     }
+
+
 
     private ImageView mPhotoCapturedImageView;
     private String mImageFileLocation = "";
@@ -954,7 +962,7 @@ class SendImage extends AsyncTask<byte[],Void,Void> {
         int port = 5555;
         byte[] array = voids[0];
         ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-        byte[] buf = new byte[9999999];
+        byte[] buf = new byte[99999999];
 
 
         byteArrayOutputStream.write(buf, 0, array.length);
@@ -975,8 +983,9 @@ class SendImage extends AsyncTask<byte[],Void,Void> {
 
         // sending data to server
         try {
-//            String base64 = Base64.getEncoder().encodeToString(array);
+//          String base64 = Base64.getEncoder().encodeToString(array);
             byte[] encodedByte = Base64.getEncoder().encode(array);
+
             out.write(encodedByte);
         } catch (IOException e) {
             e.printStackTrace();

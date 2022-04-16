@@ -4,6 +4,13 @@ import struct
 from PIL import Image
 import io
 import base64
+import numpy as np
+import cv2 as cv2
+import binascii
+import struct
+from PIL import ImageFile
+ImageFile.LOAD_TRUNCATED_IMAGES = True
+import matplotlib.pyplot as plt
 
 
 HOST = "192.168.1.13"
@@ -20,17 +27,49 @@ byte_array = bytearray()
 
 while True:
     
-    client, address = s.accept()
+    # client, address = s.accept()
 
 
-    data = client.recv(9999999)
+    # data = client.recv(9999999)
+
+    # print(data)
 
     # data = data.decode('UTF-8')
     # print(data)
 
-    a = base64.b64decode(data)
+    # imageBytes= base64.b64decode(data)
+    # print(imageBytes)
+
+    # decoded = cv2.imdecode(np.frombuffer(imageBytes, np.uint8), -1)
+
+    # print(decoded)
+
+    # cv2.imshow("Decoded image", decoded)
+
     
-    print(a)
+
+
+    
+
+    # grayImage = np.array(a).reshape(4000, 3000 )
+
+    # flatNumpyArray = np.array(a)
+    # grayImage = flatNumpyArray.reshape(300, 400)
+    # cv2.imshow("image",grayImage)
+
+    
+
+    # numpyarray = np.asarray(ba, dtype=np.uint16)
+    # bgrImage = cv2.imdecode(numpyarray, cv2.IMREAD_UNCHANGED)
+
+
+    # print(decodedData)
+
+    # image = np.fromstring(decodedData, np.uint8)
+    # image = cv2.cvtColor(image, cv2.COLOR_BayerRG2RGB)
+    # cv2.imshow(bgrImage)
+
+
 
     # buff =  bytes([data, "utf-8"]);
 
@@ -42,14 +81,48 @@ while True:
     #         size -= len(data)
 
 
+    client, address = s.accept()
+
+
+    data = client.recv(4096)
+    print(data)
+
+    print("data received")
+
+    # print(data) 
+    # decoded = cv2.imdecode(np.frombuffer(data, np.uint8), -1)
 
     
-    # data = bytearray(data)
-    # listTestByte = list(data)
+    data = bytearray(data)
 
-    # print(listTestByte)
+    listTestByte = list(data)
+
+    print(listTestByte)
+    print(data)
+    imageBytes= bytearray(base64.b64decode(data))
+    # imageBytes = np.array(imageBytes)
+    listTestByte2 = list(imageBytes)
+    print(listTestByte2)
  
-    # image = Image.open(io.BytesIO(data))
+
+    # numbers = np.array(imageBytes)
+    # x = numbers[::2]
+    # y = numbers[1::2]
+
+    # plt.plot(x, y)
+    # plt.show()  
+
+
+    # decoded = cv2.imdecode(np.frombuffer(imageBytes, np.uint8), -1)
+    # image = cv2.cvtColor(data, cv2.COLOR_BayerRG2RGB)
+    # pi = Image.fromarray(cv2.cvtColor(imageBytes, cv2.COLOR_BGR2RGB)) 
+     
+
+
+    # print(decoded)
+
+ 
+    # image = Image.open(io.BytesIO(imageBytes))
     # image.show()
 
     # buf = ''
@@ -63,4 +136,5 @@ while True:
     #         size -= len(data)
     print('Packet Received')
 client.close()
-s.close()
+s.close()   
+ 
