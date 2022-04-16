@@ -37,7 +37,6 @@ import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.SystemClock;
 import android.provider.ContactsContract;
-import android.util.Base64;
 import android.util.Size;
 import android.util.SparseIntArray;
 import android.view.Surface;
@@ -54,6 +53,7 @@ import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
+import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
 
@@ -73,6 +73,7 @@ import java.net.Socket;
 import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -81,9 +82,15 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 
+import java.util.Base64;
+
 
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
+
+    // initialize socket and input output streams
+    private Socket socket = null;
+    private OutputStream out = null;
 
 
     private static final int REQUEST_CAMERA_PERMISSION_RESULT = 0;
@@ -135,6 +142,17 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 fileOutputStream.write(bytes);
 
                 SendImage sendImage = new SendImage();
+
+//                byte[] values = new byte[6];
+
+                // Assigning elements
+//                values[0] = 10;
+//                values[1] = 10;
+//                values[2] = 10;
+//                values[3] = 10;
+//                values[4] = 10;
+//                values[5] = 12;
+
                 sendImage.execute(bytes);
 
             } catch (IOException e) {
@@ -189,7 +207,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     Integer afState = captureResult.get(CaptureResult.CONTROL_AF_STATE);
                     if(afState == CaptureResult.CONTROL_AF_STATE_FOCUSED_LOCKED || afState == CaptureResult.CONTROL_AF_STATE_NOT_FOCUSED_LOCKED)
                     {
-                        Toast.makeText(getApplicationContext(), "Auto Focus Locked!",Toast.LENGTH_SHORT).show();
                         startStillCaptureRequest();
                     }
 
@@ -929,45 +946,92 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             ipText.setText(s);
         }
     }
-class SendImage extends AsyncTask<byte[],Void,Void>
-{
+class SendImage extends AsyncTask<byte[],Void,Void> {
 
     @Override
-    protected Void doInBackground(byte[]... voids)
-    {
+    protected Void doInBackground(byte[]... voids) {
+        String address = "192.168.1.13";
+        int port = 5555;
+        byte[] array = voids[0];
+        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+        byte[] buf = new byte[9999999];
+
+
+        byteArrayOutputStream.write(buf, 0, array.length);
+
         try {
-
-
-            byte[] array = voids[0];
-
-
-
-            Socket socket = new Socket("192.168.1.4",5555);
-            OutputStream outputStream = socket.getOutputStream();
-            ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-            byte[] buf = new byte[100000000];
-            byteArrayOutputStream.write(buf, 0, array.length);
-
-//            dos.write(array.length);
-//            dos.write(array);
-
-            mBackgroundHandler.post(()->
-            {
-                Toast.makeText(getApplicationContext(),"Image sent",Toast.LENGTH_SHORT).show();
-            });
-
-            outputStream.close();
-             byteArrayOutputStream.close();
-            socket.close();
-
+            socket = new Socket(address, port);
 
         } catch (IOException e) {
             e.printStackTrace();
         }
-        return null;
-    }
+        // sends output to the socket
+        try {
+            out = new DataOutputStream(socket.getOutputStream());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
 
-}
+
+        // sending data to server
+        try {
+//            String base64 = Base64.getEncoder().encodeToString(array);
+            byte[] encodedByte = Base64.getEncoder().encode(array);
+            out.write(encodedByte);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+
+        try {
+
+            out.close();
+            socket.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+
+//        try {
+////
+////
+//
+////
+////
+//
+//            Socket socket = new Socket("192.168.1.13",5555);
+//            DataOutputStream dos = new DataOutputStream(socket.getOutputStream());
+//            ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+//            byte[] buf = new byte[1024];
+//
+//
+//            byteArrayOutputStream.write(buf, 0, array.length);
+//
+//            dos.write(array.length);
+//
+//            byteArrayOutputStream.write(buf, 0, array.length);
+//            dos.writeUTF(encodedString);
+//
+////            mBackgroundHandler.post(()->
+////            {
+////                Toast.makeText(getApplicationContext(),"Image sent",Toast.LENGTH_SHORT).show();
+////            });
+//
+//
+//
+//            socket.close();
+//            dos.flush();
+//            dos.close();
+//            byteArrayOutputStream.close();
+//
+//
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//        }
+//        return null;
+//    }
+//
+//}
 
 //    class SendImageTask extends AsyncTask<Void, Void, Void> {
 //
@@ -998,15 +1062,13 @@ class SendImage extends AsyncTask<byte[],Void,Void>
 //                // TODO Auto-generated catch block
 //                e.printStackTrace();
 //            }
-//            return null;
+        return null;
 //        }
 //    }
 
 
-
-
-
-
+    }
+}
 
 
 
