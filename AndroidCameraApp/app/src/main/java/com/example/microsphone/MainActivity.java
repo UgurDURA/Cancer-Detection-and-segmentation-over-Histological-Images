@@ -132,15 +132,17 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         @Override
         public void run()
         {
-            ByteBuffer byteBuffer = mImage.getPlanes()[0].getBuffer(); //Image data stored
+            Image.Plane plane = mImage.getPlanes()[0];
+            ByteBuffer byteBuffer = plane.getBuffer(); //Image data stored
+
             byte[] bytes = new byte[byteBuffer.remaining()];
             byteBuffer.get(bytes);
 
 
             FileOutputStream fileOutputStream = null;
             try {
-                fileOutputStream = new FileOutputStream(mImageFileName);
-                fileOutputStream.write(bytes);
+//                fileOutputStream = new FileOutputStream(mImageFileName);
+//                fileOutputStream.write(bytes);
 
 //                Bitmap src=BitmapFactory.decodeFile( "/sdcard/Download/images (1).jpeg");
 //                ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -161,8 +163,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
                 sendImage.execute(bytes);
 
-            } catch (IOException e) {
-                e.printStackTrace();
+//            } catch (IOException e) {
+//                e.printStackTrace();
             }finally {
                 mImage.close();
                 if(fileOutputStream != null)
@@ -591,6 +593,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+
         gallery = findViewById(R.id.bGallery);
 
         gallery.setOnClickListener(new View.OnClickListener() {
@@ -711,6 +714,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 }
             }
         });
+
+       
 
     }
 
@@ -921,7 +926,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
             try
             {
-                msocket = new Socket("192.168.1.8",5555);
+                msocket = new Socket("192.168.1.144",5555);
                 minputStreamReader = new InputStreamReader(msocket.getInputStream());
                 mBufferReader = new BufferedReader(minputStreamReader);
 
@@ -958,14 +963,14 @@ class SendImage extends AsyncTask<byte[],Void,Void> {
 
     @Override
     protected Void doInBackground(byte[]... voids) {
-        String address = "192.168.1.13";
+        String address = "192.168.1.144";
         int port = 5555;
         byte[] array = voids[0];
-        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-        byte[] buf = new byte[99999999];
+//        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+//        byte[] buf = new byte[99999999];
 
 
-        byteArrayOutputStream.write(buf, 0, array.length);
+//        byteArrayOutputStream.write(buf, 0, array.length);
 
         try {
             socket = new Socket(address, port);
@@ -976,20 +981,24 @@ class SendImage extends AsyncTask<byte[],Void,Void> {
         // sends output to the socket
         try {
             out = new DataOutputStream(socket.getOutputStream());
+            out.write(array, 0 , array.length);
         } catch (IOException e) {
             e.printStackTrace();
         }
-
-
-        // sending data to server
-        try {
-//          String base64 = Base64.getEncoder().encodeToString(array);
-            byte[] encodedByte = Base64.getEncoder().encode(array);
-
-            out.write(encodedByte);
-        } catch (IOException e) {
-            e.printStackTrace();
+        catch (Exception exception) {
+            exception.printStackTrace();
         }
+
+
+//        // sending data to server
+//        try {
+////          String base64 = Base64.getEncoder().encodeToString(array);
+//            byte[] encodedByte = Base64.getEncoder().encode(array);
+//
+//
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//        }
 
 
         try {
