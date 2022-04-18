@@ -146,16 +146,16 @@ while True:
 
     print('Packet Received')
 
-    with open("my_file.dng", "wb") as binary_file:
-        binary_file.write(data)
+    # with open("my_file.dng", "wb") as binary_file:
+    #     binary_file.write(data)
 
     # img = Image.fromstring('L', (3000,4000), data, 'raw', 'F;16')
-    # # img= Image.open(io.BytesIO(data))
+    img= Image.open(io.BytesIO(data))
     # img= img.convert('RGB')
     # open_cv_image = np.array(img)
     # open_cv_image = open_cv_image[:, :, ::-1].copy() 
 
-    # img.show()
+    img.show()
 
     # cv2.imshow("From Android Phone", open_cv_image)
 
