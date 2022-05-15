@@ -926,7 +926,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
             try
             {
-                msocket = new Socket("192.168.1.144",5555);
+                msocket = new Socket("192.168.2.164",5555);
                 minputStreamReader = new InputStreamReader(msocket.getInputStream());
                 mBufferReader = new BufferedReader(minputStreamReader);
 
@@ -963,7 +963,7 @@ class SendImage extends AsyncTask<byte[],Void,Void> {
 
     @Override
     protected Void doInBackground(byte[]... voids) {
-        String address = "192.168.1.144";
+        String address = "192.168.2.164";
         int port = 5555;
         byte[] array = voids[0];
 //        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();

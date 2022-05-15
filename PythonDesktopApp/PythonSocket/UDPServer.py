@@ -16,12 +16,13 @@ import matplotlib.pyplot as plt
  
 
 
-HOST = "192.168.1.144"
+HOST = "192.168.2.164"
 PORT = 5555
 
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 s.bind((HOST, PORT))
 s.listen(5)
+opencvImage = np.zeros
 
 
 
@@ -30,60 +31,6 @@ print('SERVER STARTED RUNNING')
 
 while True:
     
-    # client, address = s.accept()
-
-
-    # data = client.recv(9999999)
-
-    # print(data)
-
-    # data = data.decode('UTF-8')
-    # print(data)
-
-    # imageBytes= base64.b64decode(data)
-    # print(imageBytes)
-
-    # decoded = cv2.imdecode(np.frombuffer(imageBytes, np.uint8), -1)
-
-    # print(decoded)
-
-    # cv2.imshow("Decoded image", decoded)
-
-    
-
-
-    
-
-    # grayImage = np.array(a).reshape(4000, 3000 )
-
-    # flatNumpyArray = np.array(a)
-    # grayImage = flatNumpyArray.reshape(300, 400)
-    # cv2.imshow("image",grayImage)
-
-    
-
-    # numpyarray = np.asarray(ba, dtype=np.uint16)
-    # bgrImage = cv2.imdecode(numpyarray, cv2.IMREAD_UNCHANGED)
-
-
-    # print(decodedData)
-
-    # image = np.fromstring(decodedData, np.uint8)
-    # image = cv2.cvtColor(image, cv2.COLOR_BayerRG2RGB)
-    # cv2.imshow(bgrImage)
-
-
-
-    # buff =  bytes([data, "utf-8"]);
-
-    # size = struct.unpack("<h", buff)[0]
-    # with open('image.jpg', 'wb') as f:
-    #     while size > 0:
-    #         data = client.recv(1024)
-    #         f.write(data)
-    #         size -= len(data)
-
-
     client, address = s.accept()
 
 
@@ -104,62 +51,24 @@ while True:
             client.close()
             break
 
-    # b= base64.b64decode(data)        
-    # data = list(data)
 
-    # print(data) 
-    # decoded = cv2.imdecode(np.frombuffer(data, np.uint8), -1)
-    # data_decoded = int.from_bytes(data, byteorder="big")
-    # data_decoded = data_decoded.decode()
-    # print(data_decoded)
-
-
-    # numbers = np.array(imageBytes)
-    # x = numbers[::2]
-    # y = numbers[1::2]
-
-    # plt.plot(x, y)
-    # plt.show()  
-
-
-    # decoded = cv2.imdecode(np.frombuffer(imageBytes, np.uint8), -1)
-    # image = cv2.cvtColor(data, cv2.COLOR_BayerRG2RGB)
-    # pi = Image.fromarray(cv2.cvtColor(imageBytes, cv2.COLOR_BGR2RGB)) 
-     
-
-
-    # print(decoded)
-
- 
-    # image = Image.open(io.BytesIO(imageBytes))
-    # image.show()
-
-    # buf = ''
-    # while len(buf) < 4:
-    #     buf += client.recv(4 - len(buf))
-    # size = struct.unpack('!i', buf)[0]
-    # with open('image.jpg', 'wb') as f:
-    #     while size > 0:
-    #         data = client.recv(1024)
-    #         f.write(data)
-    #         size -= len(data)
 
     print('Packet Received')
-
-    # with open("my_file.dng", "wb") as binary_file:
-    #     binary_file.write(data)
-
-    # img = Image.fromstring('L', (3000,4000), data, 'raw', 'F;16')
+ 
     img= Image.open(io.BytesIO(data))
-    # img= img.convert('RGB')
-    # open_cv_image = np.array(img)
-    # open_cv_image = open_cv_image[:, :, ::-1].copy() 
-
-    img.show()
-
-    # cv2.imshow("From Android Phone", open_cv_image)
-
-    # cv2.imshow("Display window",np.array(data).reshape(3000,4000).astype(np.uint8))
+    # img = img.save("SendImage.png")
+    # opencvImage = cv2.imread("SendImage.png")
+    opencvImage = cv2.cvtColor(np.array(img), cv2.COLOR_RGB2BGR)
+    
+    opencvImage = cv2.rotate(opencvImage, cv2.ROTATE_90_CLOCKWISE)
+    opencvImage = cv2.resize(opencvImage,(750,1000))
+    win_name = 'Send Image'
+    cv2.namedWindow(win_name, cv2.WINDOW_NORMAL)
+    cv2.moveWindow(win_name, 0, 0 )
+    cv2.imshow(win_name, opencvImage)
+    cv2.resizeWindow(win_name, 750, 1000)
+    cv2.waitKey(0); cv2.destroyAllWindows()
+    cv2.waitKey(1)
     client.close()
 s.close()   
  
