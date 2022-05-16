@@ -17,6 +17,7 @@ import matplotlib.pyplot as plt
 from skimage.restoration import denoise_nl_means, estimate_sigma
 from skimage.exposure import match_histograms
 from sklearn.decomposition import PCA
+import non_local_means_filter
  
 
 
@@ -77,14 +78,11 @@ while True:
     break
 s.close()   
 
-img = opencvImage
-img_ref = cv2.imread("SendImage.png")
+img = opencvImage  # get image
+img_ref = cv2.imread("SendImage.png")  # get reference image
 
-sigma_est = np.mean(estimate_sigma(img, multichannel=True))  # get sigma values from all the channels
-
-denoise_img = cv2.fastNlMeansDenoisingColored(img, None, sigma_est, sigma_est, 5, 21)
-
-matched = match_histograms(image=denoise_img, reference=img_ref, multichannel=True)
+denoised_img = non_local_means_filter(img)  # step 1. non local means filtering
+matched = match_histograms(image=denoised_img, reference=img_ref, multichannel=True)
 
 (B, G, R) = cv2.split(matched)
 
