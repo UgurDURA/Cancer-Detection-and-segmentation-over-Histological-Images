@@ -18,7 +18,7 @@ from skimage.restoration import denoise_nl_means, estimate_sigma
 from skimage.exposure import match_histograms
 from sklearn.decomposition import PCA
 import non_local_means_filter
- 
+import histogram_matching
 
 
 HOST = "192.168.2.164"
@@ -82,19 +82,25 @@ img = opencvImage  # get image
 img_ref = cv2.imread("SendImage.png")  # get reference image
 
 denoised_img = non_local_means_filter(img)  # step 1. non local means filtering
-matched = match_histograms(image=denoised_img, reference=img_ref, multichannel=True)
+matched_img = histogram_matching(denoised_img, img_ref)  # step 2.1 histogram matching. Match input image with reference image
+(B, G, R) = cv2.split(matched_img)  # 2.2 get each channel of the matched image and find the following 9 channel
+outb_refb = match_histograms(image=B, reference=B, multichannel=False)  # Blue matched with blue
+outg_refb = match_histograms(image=G, reference=B, multichannel=False)  # Green matched with blue
+outr_refb = match_histograms(image=R, reference=B, multichannel=False)  # Red matched with blue
 
-(B, G, R) = cv2.split(matched)
+outb_refg = match_histograms(image=B, reference=G, multichannel=False)  # Blue matched with green
+outg_refg = match_histograms(image=G, reference=G, multichannel=False)  # Green matched with green
+outr_refg = match_histograms(image=R, reference=G, multichannel=False)  # Red matched with green
 
-outb_refb = match_histograms(image=B, reference=B, multichannel=False)
-outg_refb = match_histograms(image=G, reference=B, multichannel=False)
-outr_refb = match_histograms(image=R, reference=B, multichannel=False)
+outb_refr = match_histograms(image=B, reference=R, multichannel=False)  # Blue matched with red
+outg_refr = match_histograms(image=G, reference=R, multichannel=False)  # Green matched with red
+outr_refr = match_histograms(image=R, reference=R, multichannel=False)  # Red matched with red
 
-out_refb = cv2.merge([outb_refb, outg_refb, outr_refb])
-print(outb_refb.shape)
 pca = PCA()
 pca.fit(outb_refb)
 coeff = np.transpose(pca.components_)
+
+#out_refb = cv2.merge([outb_refb, outg_refb, outr_refb])  # merge matched channels and get final b channel
 
 win_name = 'Original Image'
 cv2.namedWindow(win_name, cv2.WINDOW_NORMAL)
@@ -105,23 +111,23 @@ cv2.imshow("Original", img)
 cv2.waitKey(0); cv2.destroyAllWindows()
 cv2.waitKey(1)
 win_name = 'NLM Filtered'
-img = cv2.rotate(denoise_img, cv2.ROTATE_90_CLOCKWISE)
-img = cv2.resize(denoise_img,(750,1000))
+img = cv2.rotate(denoised_img, cv2.ROTATE_90_CLOCKWISE)
+img = cv2.resize(denoised_img,(750,1000))
 cv2.namedWindow(win_name, cv2.WINDOW_NORMAL)
 cv2.moveWindow(win_name, 0, 0 )
-cv2.imshow(win_name, denoise_img)
+cv2.imshow(win_name, denoised_img)
 cv2.resizeWindow(win_name, 750, 1000)
-cv2.imshow("NLM Filtered", denoise_img)
+cv2.imshow("NLM Filtered", denoised_img)
 cv2.waitKey(0); cv2.destroyAllWindows()
 cv2.waitKey(1)
 win_name = 'HM'
-img = cv2.rotate(matched, cv2.ROTATE_90_CLOCKWISE)
-img = cv2.resize(matched,(750,1000))
+img = cv2.rotate(matched_img, cv2.ROTATE_90_CLOCKWISE)
+img = cv2.resize(matched_img,(750,1000))
 cv2.namedWindow(win_name, cv2.WINDOW_NORMAL)
 cv2.moveWindow(win_name, 0, 0 )
-cv2.imshow(win_name, matched)
+cv2.imshow(win_name, matched_img)
 cv2.resizeWindow(win_name, 750, 1000)
-cv2.imshow("HM", matched)
+cv2.imshow("HM", matched_img)
 cv2.waitKey(0); cv2.destroyAllWindows()
 cv2.waitKey(1)
 
