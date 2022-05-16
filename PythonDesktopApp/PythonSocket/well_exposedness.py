@@ -4,9 +4,9 @@ import numpy as np
 
 
 def well_exposedness(image):
-    im_b = image[:, :, 0] 
-    im_g = image[:, :, 1]
-    im_r = image[:, :, 2]
+    im_b = image[:, :, 0]  # get b channel
+    im_g = image[:, :, 1]  # get g channel
+    im_r = image[:, :, 2]  # get r channel
 
     m_im_b = np.mean(im_b)  # computes the mean over all dimensions of an array. "all".
     m_im_g = np.mean(im_g)
@@ -25,3 +25,7 @@ def well_exposedness(image):
     b = result_b
 
     return r, g, b
+
+# WE Maps
+# Channels are recalculated to give a higher
+# weight to the best-illuminated pixels.
