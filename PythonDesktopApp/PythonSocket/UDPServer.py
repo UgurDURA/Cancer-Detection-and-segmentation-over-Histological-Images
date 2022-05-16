@@ -101,7 +101,7 @@ pca.fit(outb_refb)
 coeff = np.transpose(pca.components_)
 
 # step 3.2 get WE maps
-# step 3.3 get  maps
+# step 3.3 get Saturation maps
 # step 4 laplacian filtering
 # step 5 calculating new channels and merging them
 
