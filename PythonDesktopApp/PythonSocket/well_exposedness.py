@@ -3,10 +3,10 @@ import math
 import numpy as np
 
 
-def rgb_well_exposedness(im, name):
-    im_b = im[:, :, 0]
-    im_g = im[:, :, 1]
-    im_r = im[:, :, 2]
+def well_exposedness(image):
+    im_b = image[:, :, 0] 
+    im_g = image[:, :, 1]
+    im_r = image[:, :, 2]
 
     m_im_b = np.mean(im_b)  # computes the mean over all dimensions of an array. "all".
     m_im_g = np.mean(im_g)
