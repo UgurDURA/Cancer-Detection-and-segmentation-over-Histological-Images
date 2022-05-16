@@ -96,9 +96,14 @@ outb_refr = match_histograms(image=B, reference=R, multichannel=False)  # Blue m
 outg_refr = match_histograms(image=G, reference=R, multichannel=False)  # Green matched with red
 outr_refr = match_histograms(image=R, reference=R, multichannel=False)  # Red matched with red
 
-pca = PCA()
+pca = PCA()  # step 3.1 get PCA maps
 pca.fit(outb_refb)
 coeff = np.transpose(pca.components_)
+
+# step 3.2 get WE maps
+# step 3.3 get  maps
+# step 4 laplacian filtering
+# step 5 calculating new channels and merging them
 
 #out_refb = cv2.merge([outb_refb, outg_refb, outr_refb])  # merge matched channels and get final b channel
 
