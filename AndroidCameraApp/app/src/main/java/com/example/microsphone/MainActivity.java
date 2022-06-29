@@ -447,7 +447,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             mImageReader.setOnImageAvailableListener(mOnImageAvailableListener, mBackgroundHandler);
             mPreviewSize = optimalSize(map.getOutputSizes(SurfaceTexture.class), width, height);
 
-            mcameraID = "0"; //Manually provided camera ID
+            mcameraID = "4"; //Manually provided camera ID
 
             mCameraCharacteristics = cameraCharacteristics;
 
@@ -963,7 +963,7 @@ class SendImage extends AsyncTask<byte[],Void,Void> {
 
     @Override
     protected Void doInBackground(byte[]... voids) {
-        String address = "192.168.2.164";
+        String address = "192.168.1.144";
         int port = 5555;
         byte[] array = voids[0];
 //        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();

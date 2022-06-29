@@ -21,7 +21,7 @@ import non_local_means_filter
 import histogram_matching
 
 
-HOST = "192.168.2.164"
+HOST = "192.168.1.144"
 PORT = 5555
 
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -61,21 +61,20 @@ while True:
     print('Packet Received')
  
     imgReceived= Image.open(io.BytesIO(data))
-    # img = img.save("SendImage.png")
+    # img = imgReceived.save("SendImage.png")
     # opencvImage = cv2.imread("SendImage.png")
     opencvImage = cv2.cvtColor(np.array(imgReceived), cv2.COLOR_RGB2BGR)
     
     opencvImage = cv2.rotate(opencvImage, cv2.ROTATE_90_CLOCKWISE)
-    opencvImage = cv2.resize(opencvImage,(750,1000))
+    opencvImage = cv2.resize(opencvImage,(960,540))
     win_name = 'Send Image'
     cv2.namedWindow(win_name, cv2.WINDOW_NORMAL)
     cv2.moveWindow(win_name, 0, 0 )
     cv2.imshow(win_name, opencvImage)
-    cv2.resizeWindow(win_name, 750, 1000)
+    cv2.resizeWindow(win_name, 960,540)
     cv2.waitKey(0); cv2.destroyAllWindows()
     cv2.waitKey(1)
     client.close()
-    break
 s.close()   
 
 img = opencvImage  # get image
