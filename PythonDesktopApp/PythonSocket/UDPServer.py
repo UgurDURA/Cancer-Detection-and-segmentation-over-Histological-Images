@@ -19,9 +19,10 @@ from skimage.exposure import match_histograms
 from sklearn.decomposition import PCA
 import non_local_means_filter
 import histogram_matching
+import math
 
 
-HOST = "192.168.1.144"
+HOST = "192.168.2.164"
 PORT = 5555
 
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -66,26 +67,51 @@ while True:
     opencvImage = cv2.cvtColor(np.array(imgReceived), cv2.COLOR_RGB2BGR)
     
     opencvImage = cv2.rotate(opencvImage, cv2.ROTATE_90_CLOCKWISE)
-    opencvImage = cv2.resize(opencvImage,(960,540))
+    opencvImage = cv2.resize(opencvImage,(750, 1000))
     win_name = 'Send Image'
     cv2.namedWindow(win_name, cv2.WINDOW_NORMAL)
     cv2.moveWindow(win_name, 0, 0 )
     cv2.imshow(win_name, opencvImage)
-    cv2.resizeWindow(win_name, 960,540)
+    cv2.resizeWindow(win_name, 750, 1000)
     cv2.waitKey(0); cv2.destroyAllWindows()
     cv2.waitKey(1)
     client.close()
-s.close()   
+    break
+s.close()
 
-img = opencvImage  # get image
-img_ref = cv2.imread("SendImage.png")  # get reference image
+############################################################################################################################################
 
-denoised_img = non_local_means_filter(img)  # step 1. non local means filtering
-matched_img = histogram_matching(denoised_img, img_ref)  # step 2.1 histogram matching. Match input image with reference image
-(B, G, R) = cv2.split(matched_img)  # 2.2 get each channel of the matched image and find the following 9 channel
-outb_refb = match_histograms(image=B, reference=B, multichannel=False)  # Blue matched with blue
-outg_refb = match_histograms(image=G, reference=B, multichannel=False)  # Green matched with blue
-outr_refb = match_histograms(image=R, reference=B, multichannel=False)  # Red matched with blue
+                                                                            #Receive the input
+                                                                            
+############################################################################################################################################
+
+img = opencvImage
+img_ref = cv2.imread("SendImage.png")
+
+############################################################################################################################################
+                                                                           
+                                                                            #Non Local Means Filtering 
+
+############################################################################################################################################
+
+sigma_est = np.mean(estimate_sigma(img, multichannel=True))  # get sigma values from all the channels
+
+denoise_img = cv2.fastNlMeansDenoisingColored(img, None, sigma_est, sigma_est, 5, 21)
+
+
+############################################################################################################################################
+
+                                                                            #Histogram Matching 
+
+############################################################################################################################################
+
+matched = match_histograms(image=denoise_img, reference=img_ref, multichannel=True)
+
+(B, G, R) = cv2.split(matched)
+
+outb_refb = match_histograms(image=B, reference=B, multichannel=False)
+outg_refb = match_histograms(image=G, reference=B, multichannel=False)
+outr_refb = match_histograms(image=R, reference=B, multichannel=False)
 
 outb_refg = match_histograms(image=B, reference=G, multichannel=False)  # Blue matched with green
 outg_refg = match_histograms(image=G, reference=G, multichannel=False)  # Green matched with green
@@ -95,16 +121,67 @@ outb_refr = match_histograms(image=B, reference=R, multichannel=False)  # Blue m
 outg_refr = match_histograms(image=G, reference=R, multichannel=False)  # Green matched with red
 outr_refr = match_histograms(image=R, reference=R, multichannel=False)  # Red matched with red
 
-pca = PCA()  # step 3.1 get PCA maps
+
+############################################################################################################################################
+
+                                                                    #Histogram Matching Between Channels
+
+############################################################################################################################################
+
+
+out_refb = cv2.merge([outb_refb, outg_refb, outr_refb])
+out_refg = cv2.merge([outb_refg, outg_refg, outr_refg])
+out_refr = cv2.merge([outb_refr, outg_refr, outr_refr])
+print(outb_refb.shape)
+
+
+############################################################################################################################################
+
+                                                                #PCA Map Extraction
+
+############################################################################################################################################
+pca = PCA()
 pca.fit(outb_refb)
 coeff = np.transpose(pca.components_)
 
-# step 3.2 get WE maps
-# step 3.3 get Saturation maps
-# step 4 laplacian filtering
-# step 5 calculating new channels and merging them
 
-#out_refb = cv2.merge([outb_refb, outg_refb, outr_refb])  # merge matched channels and get final b channel
+############################################################################################################################################
+
+                                                                #Well Exposedness Map Extraction
+
+############################################################################################################################################
+
+im_b = out_refb[:, :, 0]  # get b channel
+im_g = out_refg[:, :, 1]  # get g channel
+im_r = out_refr[:, :, 2]  # get r channel
+
+m_im_b = np.mean(im_b)  # computes the mean over all dimensions of an array. "all".
+m_im_g = np.mean(im_g)
+m_im_r = np.mean(im_r)
+
+std_im_b = np.std(im_b)  # computes the standard deviation over all elements of A. "all".
+std_im_g = np.std(im_g)
+std_im_r = np.std(im_r)
+
+twomatrix = [2]
+
+result_b = math.exp(- np.power(im_b - ((1 - m_im_b), 2)) / (np.dot(twomatrix,(std_im_b ^ 2))))
+result_g = math.exp(- np.power(im_g - ((1 - m_im_g), 2)) / (np.dot(twomatrix,(std_im_g ^ 2))))
+result_r = math.exp(- np.power(im_r - ((1 - m_im_r), 2)) / (np.dot(twomatrix,(std_im_r ^ 2))))
+
+
+b = result_b
+g = result_g
+r = result_r
+ 
+
+
+
+############################################################################################################################################
+
+                                                                #Display Each Result
+
+############################################################################################################################################
 
 win_name = 'Original Image'
 cv2.namedWindow(win_name, cv2.WINDOW_NORMAL)
@@ -114,24 +191,110 @@ cv2.resizeWindow(win_name, 750, 1000)
 cv2.imshow("Original", img)
 cv2.waitKey(0); cv2.destroyAllWindows()
 cv2.waitKey(1)
+
 win_name = 'NLM Filtered'
-img = cv2.rotate(denoised_img, cv2.ROTATE_90_CLOCKWISE)
-img = cv2.resize(denoised_img,(750,1000))
+img = cv2.rotate(denoise_img, cv2.ROTATE_90_CLOCKWISE)
+img = cv2.resize(denoise_img,(750,1000))
 cv2.namedWindow(win_name, cv2.WINDOW_NORMAL)
 cv2.moveWindow(win_name, 0, 0 )
-cv2.imshow(win_name, denoised_img)
+cv2.imshow(win_name, denoise_img)
 cv2.resizeWindow(win_name, 750, 1000)
-cv2.imshow("NLM Filtered", denoised_img)
+cv2.imshow("NLM Filtered", denoise_img)
 cv2.waitKey(0); cv2.destroyAllWindows()
 cv2.waitKey(1)
+
 win_name = 'HM'
-img = cv2.rotate(matched_img, cv2.ROTATE_90_CLOCKWISE)
-img = cv2.resize(matched_img,(750,1000))
+img = cv2.rotate(matched, cv2.ROTATE_90_CLOCKWISE)
+img = cv2.resize(matched,(750,1000))
 cv2.namedWindow(win_name, cv2.WINDOW_NORMAL)
 cv2.moveWindow(win_name, 0, 0 )
-cv2.imshow(win_name, matched_img)
+cv2.imshow(win_name, matched)
 cv2.resizeWindow(win_name, 750, 1000)
-cv2.imshow("HM", matched_img)
+cv2.imshow("HM", matched)
 cv2.waitKey(0); cv2.destroyAllWindows()
 cv2.waitKey(1)
+
+win_name = 'Blue Channel Matched'
+img = cv2.rotate(out_refb, cv2.ROTATE_90_CLOCKWISE)
+img = cv2.resize(out_refb,(750,1000))
+cv2.namedWindow(win_name, cv2.WINDOW_NORMAL)
+cv2.moveWindow(win_name, 0, 0 )
+cv2.imshow(win_name, out_refb)
+cv2.resizeWindow(win_name, 750, 1000)
+cv2.imshow("Blue Channel Matched", out_refb)
+cv2.waitKey(0); cv2.destroyAllWindows()
+cv2.waitKey(1)
+
+
+win_name = 'Blue Channel Well Exposedness'
+img = cv2.rotate(b, cv2.ROTATE_90_CLOCKWISE)
+img = cv2.resize(b,(750,1000))
+cv2.namedWindow(win_name, cv2.WINDOW_NORMAL)
+cv2.moveWindow(win_name, 0, 0 )
+cv2.imshow(win_name, b)
+cv2.resizeWindow(win_name, 750, 1000)
+cv2.imshow("Blue Channel Matched", b)
+cv2.waitKey(0); cv2.destroyAllWindows()
+cv2.waitKey(1)
+
+
+   
+   
+# img = opencvImage  # get image
+# img_ref = cv2.imread("SendImage.png")  # get reference image
+
+# denoised_img = non_local_means_filter(img)  # step 1. non local means filtering
+# matched_img = histogram_matching(denoised_img, img_ref)  # step 2.1 histogram matching. Match input image with reference image
+# (B, G, R) = cv2.split(matched_img)  # 2.2 get each channel of the matched image and find the following 9 channel
+# outb_refb = match_histograms(image=B, reference=B, multichannel=False)  # Blue matched with blue
+# outg_refb = match_histograms(image=G, reference=B, multichannel=False)  # Green matched with blue
+# outr_refb = match_histograms(image=R, reference=B, multichannel=False)  # Red matched with blue
+
+# outb_refg = match_histograms(image=B, reference=G, multichannel=False)  # Blue matched with green
+# outg_refg = match_histograms(image=G, reference=G, multichannel=False)  # Green matched with green
+# outr_refg = match_histograms(image=R, reference=G, multichannel=False)  # Red matched with green
+
+# outb_refr = match_histograms(image=B, reference=R, multichannel=False)  # Blue matched with red
+# outg_refr = match_histograms(image=G, reference=R, multichannel=False)  # Green matched with red
+# outr_refr = match_histograms(image=R, reference=R, multichannel=False)  # Red matched with red
+
+# pca = PCA()  # step 3.1 get PCA maps
+# pca.fit(outb_refb)
+# coeff = np.transpose(pca.components_)
+
+# # step 3.2 get WE maps
+# # step 3.3 get Saturation maps
+# # step 4 laplacian filtering
+# # step 5 calculating new channels and merging them
+
+# #out_refb = cv2.merge([outb_refb, outg_refb, outr_refb])  # merge matched channels and get final b channel
+
+# win_name = 'Original Image'
+# cv2.namedWindow(win_name, cv2.WINDOW_NORMAL)
+# cv2.moveWindow(win_name, 0, 0 )
+# cv2.imshow(win_name, img)
+# cv2.resizeWindow(win_name, 750, 1000)
+# cv2.imshow("Original", img)
+# cv2.waitKey(0); cv2.destroyAllWindows()
+# cv2.waitKey(1)
+# win_name = 'NLM Filtered'
+# img = cv2.rotate(denoised_img, cv2.ROTATE_90_CLOCKWISE)
+# img = cv2.resize(denoised_img,(750,1000))
+# cv2.namedWindow(win_name, cv2.WINDOW_NORMAL)
+# cv2.moveWindow(win_name, 0, 0 )
+# cv2.imshow(win_name, denoised_img)
+# cv2.resizeWindow(win_name, 750, 1000)
+# cv2.imshow("NLM Filtered", denoised_img)
+# cv2.waitKey(0); cv2.destroyAllWindows()
+# cv2.waitKey(1)
+# win_name = 'HM'
+# img = cv2.rotate(matched_img, cv2.ROTATE_90_CLOCKWISE)
+# img = cv2.resize(matched_img,(750,1000))
+# cv2.namedWindow(win_name, cv2.WINDOW_NORMAL)
+# cv2.moveWindow(win_name, 0, 0 )
+# cv2.imshow(win_name, matched_img)
+# cv2.resizeWindow(win_name, 750, 1000)
+# cv2.imshow("HM", matched_img)
+# cv2.waitKey(0); cv2.destroyAllWindows()
+# cv2.waitKey(1)
 
