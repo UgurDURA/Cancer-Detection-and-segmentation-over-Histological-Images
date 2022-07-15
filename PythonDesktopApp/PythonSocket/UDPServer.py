@@ -13,6 +13,7 @@ import struct
 from PIL import ImageFile
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 import matplotlib.pyplot as plt
+import pca_last
 
 from skimage.restoration import denoise_nl_means, estimate_sigma
 from skimage.exposure import match_histograms
@@ -140,9 +141,12 @@ print(outb_refb.shape)
                                                                 #PCA Map Extraction
 
 ############################################################################################################################################
-pca = PCA()
-pca.fit(outb_refb)
-coeff = np.transpose(pca.components_)
+
+
+PB = pca_last.pca_weight_char(out_refb)
+PG = pca_last.pca_weight_char(out_refg)
+PR = pca_last.pca_weight_char(out_refr)
+
 
 
 ############################################################################################################################################

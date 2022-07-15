@@ -1,6 +1,24 @@
 from tkinter import *
 from PIL import ImageTk, Image
 import cv2 as cv2
+import socket
+
+
+
+# HOST = "192.168.2.164"
+# PORT = 6666
+
+# s = socket.socket(socket.AF_INET,
+#                   socket.SOCK_STREAM)
+
+# s.bind(('', PORT))
+# s.listen(1)
+# c, addr = s.accept()
+# print("CONNECTION FROM:", str(addr))
+
+# def captureImage():
+#     c.send(b"CAPTURE")
+
 
 root = Tk()
 root.title("MicrosPhone")
@@ -26,6 +44,7 @@ b_exit.grid(row=4,column=0)
 
 
 
- 
 
+ 
+# c.close()
 root.mainloop()

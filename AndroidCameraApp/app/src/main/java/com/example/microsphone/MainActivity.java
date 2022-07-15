@@ -4,11 +4,14 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
 import androidx.core.content.ContextCompat;
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 
 import android.Manifest;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -93,6 +96,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private Socket socket = null;
     private OutputStream out = null;
 
+    public static final String SERVER_FILTER = "SERVER_FILTER";
+
+
 
     private static final int REQUEST_CAMERA_PERMISSION_RESULT = 0;
     private static final int REQUEST_WRITE_EXTERNAL_STORAGE_PERMISSION_RESULT = 1;
@@ -107,6 +113,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     public static int i;
     private String mcameraID;
     private Size mPreviewSize;
+    private RemoteServer remoteServer;
 
     private Size mVideoSize;
     private Size mImageSize;
@@ -271,6 +278,13 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         public void onSurfaceTextureUpdated(@NonNull SurfaceTexture surface) {
 
         }
+
+        private BroadcastReceiver studioCommandReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+
+            }
+        };
     };
 
     Button bTakePicture, bRecording, bSend, bRaw;
@@ -734,7 +748,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             try {
                 setupCamera(mTextureView.getWidth(),mTextureView.getHeight());
                 connectCamera();
-            } catch (CameraAccessException e) {
+                remoteServer.start();
+//                LocalBroadcastManager.getInstance(this).registerReceiver(serverReceiver, new IntentFilter(SERVER_FILTER));
+            } catch (CameraAccessException | IOException e) {
                 e.printStackTrace();
             }
 
@@ -743,6 +759,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         {
             mTextureView.setSurfaceTextureListener(mSurfaceTextureListener);
         }
+
+
 
     }
 
@@ -959,6 +977,16 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         {
             super.onPostExecute(s);
             ipText.setText(s);
+        }
+    }
+
+
+    class ReceiveCommand extends AsyncTask<byte[],Void,Void>
+
+    {
+        @Override
+        protected Void doInBackground(byte[]... bytes) {
+            return null;
         }
     }
 class SendImage extends AsyncTask<byte[],Void,Void> {
