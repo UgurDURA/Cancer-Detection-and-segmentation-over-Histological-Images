@@ -180,17 +180,17 @@ DRB, DRG, DRR = well_exposedness(out_refr)
 
 ############################################################################################################################################
 
-WBB = PBB * EBB * DBB
-WGB = PGB * EGB * DBB
-WRB = PRB * ERB * DRB
+WBB = cv2.Laplacian(PBB * EBB * DBB)
+WGB = cv2.Laplacian(PGB * EGB * DBB)
+WRB = cv2.Laplacian(PRB * ERB * DRB)
 
-WBG = PBG * EBG * DBG
-WGG = PGG * EGG * DGG
-WRG = PRG * ERG * DRG
+WBG = cv2.Laplacian(PBG * EBG * DBG)
+WGG = cv2.Laplacian(PGG * EGG * DGG)
+WRG = cv2.Laplacian(PRG * ERG * DRG)
 
-WBR = PBR * EBR * DBR
-WGR = PGR * EGR * DGR
-WRR = PRR * ERR * DRR
+WBR = cv2.Laplacian(PBR * EBR * DBR)
+WGR = cv2.Laplacian(PGR * EGR * DGR)
+WRR = cv2.Laplacian(PRR * ERR * DRR)
 
 ############################################################################################################################################
 
