@@ -174,6 +174,23 @@ DBB, DBG, DBR = well_exposedness(out_refb)
 DGB, DGG, DGR = well_exposedness(out_refg)
 DRB, DRG, DRR = well_exposedness(out_refr)
 
+############################################################################################################################################
+
+                                                                #Weight calculations
+
+############################################################################################################################################
+
+WBB = PBB * EBB * DBB
+WGB = PGB * EGB * DBB
+WRB = PRB * ERB * DRB
+
+WBG = PBG * EBG * DBG
+WGG = PGG * EGG * DGG
+WRG = PRG * ERG * DRG
+
+WBR = PBR * EBR * DBR
+WGR = PGR * EGR * DGR
+WRR = PRR * ERR * DRR
 
 ############################################################################################################################################
 
