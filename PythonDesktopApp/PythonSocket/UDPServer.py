@@ -205,8 +205,13 @@ recons_R = ((RR * WRR) + (GR * WGR) + (BR * WBR)) / (WRR + WGR + WBR)
 
 final_image = cv2.merge([recons_B, recons_G, recons_R])
 
-Cb, Cr = cbcr_transform(final_image)
+Y, Cb, Cr = cbcr_transform(final_image)
 refCb, refCr = cbcr_transform(img_ref)
+
+matched_Cb = match_histograms(image=Cb, reference=refCb, multichannel=False)
+matched_Cr = match_histograms(image=Cr, reference=refCr, multichannel=False)
+
+final_YCbCr = cv2.merge([Y, matched_Cb, matched_Cr])
 
 ############################################################################################################################################
 
