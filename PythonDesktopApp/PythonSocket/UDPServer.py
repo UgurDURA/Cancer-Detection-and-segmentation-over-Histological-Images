@@ -12,6 +12,7 @@ import binascii
 import struct
 from PIL import ImageFile
 
+from PythonDesktopApp.PythonSocket.cbcr import cbcr_transform
 from PythonDesktopApp.PythonSocket.well_exposedness import well_exposedness
 
 ImageFile.LOAD_TRUNCATED_IMAGES = True
@@ -203,6 +204,9 @@ recons_G = ((RG * WRG) + (GG * WGG) + (BG * WBG)) / (WRG + WGG + WBG)
 recons_R = ((RR * WRR) + (GR * WGR) + (BR * WBR)) / (WRR + WGR + WBR)
 
 final_image = cv2.merge([recons_B, recons_G, recons_R])
+
+Cb, Cr = cbcr_transform(final_image)
+refCb, refCr = cbcr_transform(img_ref)
 
 ############################################################################################################################################
 

@@ -9,4 +9,4 @@ def cbcr_transform(image):
     # Chrominance Cb
     Cb = YCrCb[:, :, 2]
 
-    return Cr, Cb
+    return Cb, Cr
