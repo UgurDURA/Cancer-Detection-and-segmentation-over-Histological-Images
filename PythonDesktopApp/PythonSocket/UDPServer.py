@@ -212,6 +212,7 @@ matched_Cb = match_histograms(image=Cb, reference=refCb, multichannel=False)
 matched_Cr = match_histograms(image=Cr, reference=refCr, multichannel=False)
 
 final_YCbCr = cv2.merge([Y, matched_Cb, matched_Cr])
+final_BGR = cv2.cvtColor(final_YCbCr, cv2.COLOR_YCrCb2BGR)
 
 ############################################################################################################################################
 
