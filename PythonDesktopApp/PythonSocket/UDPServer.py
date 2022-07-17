@@ -11,6 +11,9 @@ import cv2 as cv2
 import binascii
 import struct
 from PIL import ImageFile
+
+from PythonDesktopApp.PythonSocket.well_exposedness import well_exposedness
+
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 import matplotlib.pyplot as plt
 import pca_last
@@ -143,9 +146,9 @@ print(outb_refb.shape)
 ############################################################################################################################################
 
 
-PB = pca_last.pca_weight_char(out_refb)
-PG = pca_last.pca_weight_char(out_refg)
-PR = pca_last.pca_weight_char(out_refr)
+PBB, PBG, PBR = pca_last.pca_weight_char(out_refb)
+PGB, PGG, PGR = pca_last.pca_weight_char(out_refg)
+PRB, PRG, PRR = pca_last.pca_weight_char(out_refr)
 
 
 
@@ -155,30 +158,21 @@ PR = pca_last.pca_weight_char(out_refr)
 
 ############################################################################################################################################
 
-im_b = out_refb[:, :, 0]  # get b channel
-im_g = out_refg[:, :, 1]  # get g channel
-im_r = out_refr[:, :, 2]  # get r channel
 
-m_im_b = np.mean(im_b)  # computes the mean over all dimensions of an array. "all".
-m_im_g = np.mean(im_g)
-m_im_r = np.mean(im_r)
+EBB, EBG, EBR = well_exposedness(out_refb)
+EGB, EGG, EGR = well_exposedness(out_refg)
+ERB, ERG, ERR = well_exposedness(out_refr)
 
-std_im_b = np.std(im_b)  # computes the standard deviation over all elements of A. "all".
-std_im_g = np.std(im_g)
-std_im_r = np.std(im_r)
+############################################################################################################################################
 
-twomatrix = [2]
+                                                                #Brightness Map Extraction
 
-result_b = math.exp(- np.power(im_b - ((1 - m_im_b), 2)) / (np.dot(twomatrix,(std_im_b ^ 2))))
-result_g = math.exp(- np.power(im_g - ((1 - m_im_g), 2)) / (np.dot(twomatrix,(std_im_g ^ 2))))
-result_r = math.exp(- np.power(im_r - ((1 - m_im_r), 2)) / (np.dot(twomatrix,(std_im_r ^ 2))))
+############################################################################################################################################
 
 
-b = result_b
-g = result_g
-r = result_r
- 
-
+DBB, DBG, DBR = well_exposedness(out_refb)
+DGB, DGG, DGR = well_exposedness(out_refg)
+DRB, DRG, DRR = well_exposedness(out_refr)
 
 
 ############################################################################################################################################
@@ -189,7 +183,7 @@ r = result_r
 
 win_name = 'Original Image'
 cv2.namedWindow(win_name, cv2.WINDOW_NORMAL)
-cv2.moveWindow(win_name, 0, 0 )
+cv2.moveWindow(win_name, 0, 0)
 cv2.imshow(win_name, img)
 cv2.resizeWindow(win_name, 750, 1000)
 cv2.imshow("Original", img)
