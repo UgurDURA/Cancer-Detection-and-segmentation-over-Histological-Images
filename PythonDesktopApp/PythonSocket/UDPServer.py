@@ -113,17 +113,17 @@ matched = match_histograms(image=denoise_img, reference=img_ref, multichannel=Tr
 
 (B, G, R) = cv2.split(matched)
 
-outb_refb = match_histograms(image=B, reference=B, multichannel=False)
-outg_refb = match_histograms(image=G, reference=B, multichannel=False)
-outr_refb = match_histograms(image=R, reference=B, multichannel=False)
+BB = match_histograms(image=B, reference=B, multichannel=False)
+GB = match_histograms(image=G, reference=B, multichannel=False)
+RB = match_histograms(image=R, reference=B, multichannel=False)
 
-outb_refg = match_histograms(image=B, reference=G, multichannel=False)  # Blue matched with green
-outg_refg = match_histograms(image=G, reference=G, multichannel=False)  # Green matched with green
-outr_refg = match_histograms(image=R, reference=G, multichannel=False)  # Red matched with green
+BG = match_histograms(image=B, reference=G, multichannel=False)  # Blue matched with green
+GG = match_histograms(image=G, reference=G, multichannel=False)  # Green matched with green
+RG = match_histograms(image=R, reference=G, multichannel=False)  # Red matched with green
 
-outb_refr = match_histograms(image=B, reference=R, multichannel=False)  # Blue matched with red
-outg_refr = match_histograms(image=G, reference=R, multichannel=False)  # Green matched with red
-outr_refr = match_histograms(image=R, reference=R, multichannel=False)  # Red matched with red
+BR = match_histograms(image=B, reference=R, multichannel=False)  # Blue matched with red
+GR = match_histograms(image=G, reference=R, multichannel=False)  # Green matched with red
+RR = match_histograms(image=R, reference=R, multichannel=False)  # Red matched with red
 
 
 ############################################################################################################################################
@@ -133,10 +133,10 @@ outr_refr = match_histograms(image=R, reference=R, multichannel=False)  # Red ma
 ############################################################################################################################################
 
 
-out_refb = cv2.merge([outb_refb, outg_refb, outr_refb])
-out_refg = cv2.merge([outb_refg, outg_refg, outr_refg])
-out_refr = cv2.merge([outb_refr, outg_refr, outr_refr])
-print(outb_refb.shape)
+out_refb = cv2.merge([BB, GB, RB])
+out_refg = cv2.merge([BG, GG, RG])
+out_refr = cv2.merge([BR, GR, RR])
+print(BB.shape)
 
 
 ############################################################################################################################################
@@ -191,6 +191,16 @@ WRG = cv2.Laplacian(PRG * ERG * DRG)
 WBR = cv2.Laplacian(PBR * EBR * DBR)
 WGR = cv2.Laplacian(PGR * EGR * DGR)
 WRR = cv2.Laplacian(PRR * ERR * DRR)
+
+############################################################################################################################################
+
+                                                                #Reconstructing the Color Channels
+
+############################################################################################################################################
+
+recons_R = ((RR * WRR) + (GR * WGR) + (BR * WBR)) / (WRR + WGR + WBR)
+recons_G = ((RG * WRG) + (GG * WGG) + (BG * WBG)) / (WRG + WGG + WBG)
+recons_B = ((RB * WRB) + (GB * WGB) + (BB * WBB)) / (WRB + WGB + WBB)
 
 ############################################################################################################################################
 
