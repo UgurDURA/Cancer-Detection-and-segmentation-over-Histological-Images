@@ -16,15 +16,15 @@ def well_exposedness(image):
     std_im_g = np.std(im_g)
     std_im_r = np.std(im_r)
 
-    result_r = math.exp(- (im_r - np.power((1 - m_im_r), 2)) / (2 * (std_im_r ^ 2)))
-    result_g = math.exp(- (im_g - np.power((1 - m_im_g), 2)) / (2 * (std_im_g ^ 2)))
     result_b = math.exp(- (im_b - np.power((1 - m_im_b), 2)) / (2 * (std_im_b ^ 2)))
+    result_g = math.exp(- (im_g - np.power((1 - m_im_g), 2)) / (2 * (std_im_g ^ 2)))
+    result_r = math.exp(- (im_r - np.power((1 - m_im_r), 2)) / (2 * (std_im_r ^ 2)))
 
-    r = result_r
-    g = result_g
     b = result_b
+    g = result_g
+    r = result_r
 
-    return r, g, b
+    return b, g, r
 
 # WE Maps
 # Channels are recalculated to give a higher
