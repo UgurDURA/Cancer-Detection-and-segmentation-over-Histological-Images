@@ -198,9 +198,11 @@ WRR = cv2.Laplacian(PRR * ERR * DRR)
 
 ############################################################################################################################################
 
-recons_R = ((RR * WRR) + (GR * WGR) + (BR * WBR)) / (WRR + WGR + WBR)
-recons_G = ((RG * WRG) + (GG * WGG) + (BG * WBG)) / (WRG + WGG + WBG)
 recons_B = ((RB * WRB) + (GB * WGB) + (BB * WBB)) / (WRB + WGB + WBB)
+recons_G = ((RG * WRG) + (GG * WGG) + (BG * WBG)) / (WRG + WGG + WBG)
+recons_R = ((RR * WRR) + (GR * WGR) + (BR * WBR)) / (WRR + WGR + WBR)
+
+final_image = cv2.merge([recons_B, recons_G, recons_R])
 
 ############################################################################################################################################
 
