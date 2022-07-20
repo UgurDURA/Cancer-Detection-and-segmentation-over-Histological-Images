@@ -38,7 +38,7 @@ def pca_weight_char(image):
     for i in range(0, channels):
         PCA_Weights[:, :, i] = cv2.GaussianBlur(PCA_Weights[:, :, i], (5,5), cv2.BORDER_DEFAULT)
     
-    return PCA_Weights
+    return PCA_Weights[:, :, 0], PCA_Weights[:, :, 1], PCA_Weights[:, :, 2]
 
 
     print(PCA_Weights)
