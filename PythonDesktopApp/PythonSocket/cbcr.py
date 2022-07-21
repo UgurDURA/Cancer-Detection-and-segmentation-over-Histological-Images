@@ -1,7 +1,9 @@
 import cv2
+import numpy as np
 
 def cbcr_transform(image):
-    YCrCb = cv2.cvtColor(image, cv2.cv.CV_BGR2YCrCb)
+    image = np.asarray(image, dtype=np.uint8)
+    YCrCb = cv2.cvtColor(image, cv2.COLOR_BGR2YCR_CB)
     # Luminance Y
     Y = YCrCb[:, :, 0]
     # Chrominance Cr

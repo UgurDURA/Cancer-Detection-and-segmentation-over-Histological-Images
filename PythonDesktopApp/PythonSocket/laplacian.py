@@ -1,6 +1,8 @@
 import cv2
 from matplotlib import pyplot as plt
 
+
+
 rgbImage = cv2.imread('images/Kidney_2_hw.png')
 
 #gray = cv2.cvtColor(rgbImage, cv2.COLOR_BGR2GRAY)
