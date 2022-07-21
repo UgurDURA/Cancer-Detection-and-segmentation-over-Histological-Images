@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 
 
 # Read image
-img = cv2.imread("sendImage 4.png")
+img = cv2.imread("sendImage 5.png")
 # plt.imshow(img[:,:,::-1])
 # plt.show()
 print(img.shape)
@@ -57,9 +57,27 @@ plt.show()
                                             #FRCNN SuperResolution (3X)
 ###################################################################################################################################################
 
+sr = cv2.dnn_superres.DnnSuperResImpl_create()
+
+path = "SuperResolutionZoomAlgorithms/FSRCNN_x3.pb"
+
+sr.readModel(path)
+
+sr.setModel("fsrcnn",3)
+
+result = sr.upsample(img)
+
+# Resized image
+resized = cv2.resize(img,dsize=None,fx=3,fy=3)
+
+
+###################################################################################################################################################
+                                            #FRCNN SuperResolution (3X_Small) --> 3x is better not this one 
+###################################################################################################################################################
+
 # sr = cv2.dnn_superres.DnnSuperResImpl_create()
 
-# path = "SuperResolutionZoomAlgorithms/FSRCNN_x3.pb"
+# path = "SuperResolutionZoomAlgorithms/FSRCNN-small_x3.pb"
 
 # sr.readModel(path)
 
@@ -72,22 +90,20 @@ plt.show()
 
 
 ###################################################################################################################################################
-                                            #FRCNN SuperResolution (3X_Small)
+                                            #LapSRN SuperResolution 
 ###################################################################################################################################################
+# sr = cv2.dnn_superres.DnnSuperResImpl_create()
 
-sr = cv2.dnn_superres.DnnSuperResImpl_create()
+# path = "SuperResolutionZoomAlgorithms/LapSRN_x8.pb"
 
-path = "SuperResolutionZoomAlgorithms/FSRCNN-small_x3.pb"
+# sr.readModel(path)
 
-sr.readModel(path)
+# sr.setModel("lapsrn",8)
 
-sr.setModel("fsrcnn",3)
+# result = sr.upsample(img)
 
-result = sr.upsample(img)
-
-# Resized image
-resized = cv2.resize(img,dsize=None,fx=3,fy=3)
-
+# # Resized image
+# resized = cv2.resize(img,dsize=None,fx=8,fy=8)
 
 
 plt.figure(figsize=(12,8))
