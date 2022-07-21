@@ -1,4 +1,5 @@
 from email.mime import base
+from lib2to3.pgen2.token import VBAR
 from operator import le
 import socket
 import struct
@@ -12,22 +13,26 @@ import binascii
 import struct
 from PIL import ImageFile
 
-from PythonDesktopApp.PythonSocket.cbcr import cbcr_transform
-from PythonDesktopApp.PythonSocket.well_exposedness import well_exposedness
+# from cbcr import cbcr_transform
+# from well_exposedness import well_exposedness
 
-ImageFile.LOAD_TRUNCATED_IMAGES = True
-import matplotlib.pyplot as plt
-import pca_last
+# ImageFile.LOAD_TRUNCATED_IMAGES = True
+# import matplotlib.pyplot as plt
+# import pca_last
 
-from skimage.restoration import denoise_nl_means, estimate_sigma
-from skimage.exposure import match_histograms
-from sklearn.decomposition import PCA
-import non_local_means_filter
-import histogram_matching
-import math
+# from skimage.restoration import denoise_nl_means, estimate_sigma
+# from skimage.exposure import match_histograms
+# from sklearn.decomposition import PCA
+# import non_local_means_filter
+# import histogram_matching
+# import math
 
 
-HOST = "192.168.2.164"
+from tkinter import *
+from PIL import ImageTk, Image
+
+
+HOST = "192.168.1.6"
 PORT = 5555
 
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -70,18 +75,37 @@ while True:
     # img = imgReceived.save("SendImage.png")
     # opencvImage = cv2.imread("SendImage.png")
     opencvImage = cv2.cvtColor(np.array(imgReceived), cv2.COLOR_RGB2BGR)
-    
     opencvImage = cv2.rotate(opencvImage, cv2.ROTATE_90_CLOCKWISE)
-    opencvImage = cv2.resize(opencvImage,(750, 1000))
-    win_name = 'Send Image'
-    cv2.namedWindow(win_name, cv2.WINDOW_NORMAL)
-    cv2.moveWindow(win_name, 0, 0 )
-    cv2.imshow(win_name, opencvImage)
-    cv2.resizeWindow(win_name, 750, 1000)
-    cv2.waitKey(0); cv2.destroyAllWindows()
-    cv2.waitKey(1)
-    client.close()
-    break
+    opencvImage = cv2.resize(opencvImage,(1920,1080))
+
+
+    root = Tk()
+    root.title("MicrosPhone")    
+    # imgReceived = imgReceived.rotate(90)
+    imgReceived = imgReceived.resize((540,960))
+    my_image = ImageTk.PhotoImage(imgReceived)
+    my_label = Label(image=my_image)
+    my_label.grid(row=1, column=1, columnspan=3)
+
+    b_capture = Button(root, text = "Capture")
+    b_exit = Button(root, text= "Exit", command=root.quit)
+    b_zoom_in = Button(root, text="+")
+    b_zoom_out = Button(root, text="-")
+
+
+    b_capture.grid(row=1,column=0)
+    b_zoom_in.grid(row=2,column=0)
+    b_zoom_out.grid(row=3,column=0)
+    b_exit.grid(row=4,column=0)
+    root.mainloop()
+
+  
+    
+    
+
+    
+
+client.close()
 s.close()
 
 ############################################################################################################################################
@@ -91,7 +115,7 @@ s.close()
 ############################################################################################################################################
 
 img = opencvImage
-img_ref = cv2.imread("SendImage.png")
+img_ref = cv2.imread("Kidney_000_Mıcroscope_4x_1.09_HuwDevıce.png")
 
 ############################################################################################################################################
                                                                            
@@ -181,17 +205,17 @@ DRB, DRG, DRR = well_exposedness(out_refr)
 
 ############################################################################################################################################
 
-WBB = cv2.Laplacian(PBB * EBB * DBB)
-WGB = cv2.Laplacian(PGB * EGB * DBB)
-WRB = cv2.Laplacian(PRB * ERB * DRB)
+WBB = cv2.Laplacian((PBB * EBB * DBB), cv2.CV_64F)
+WGB = cv2.Laplacian((PGB * EGB * DBB), cv2.CV_64F)
+WRB = cv2.Laplacian((PRB * ERB * DRB), cv2.CV_64F)
 
-WBG = cv2.Laplacian(PBG * EBG * DBG)
-WGG = cv2.Laplacian(PGG * EGG * DGG)
-WRG = cv2.Laplacian(PRG * ERG * DRG)
+WBG = cv2.Laplacian((PBG * EBG * DBG), cv2.CV_64F)
+WGG = cv2.Laplacian((PGG * EGG * DGG), cv2.CV_64F)
+WRG = cv2.Laplacian((PRG * ERG * DRG), cv2.CV_64F)
 
-WBR = cv2.Laplacian(PBR * EBR * DBR)
-WGR = cv2.Laplacian(PGR * EGR * DGR)
-WRR = cv2.Laplacian(PRR * ERR * DRR)
+WBR = cv2.Laplacian((PBR * EBR * DBR), cv2.CV_64F)
+WGR = cv2.Laplacian((PGR * EGR * DGR), cv2.CV_64F)
+WRR = cv2.Laplacian((PRR * ERR * DRR), cv2.CV_64F)
 
 ############################################################################################################################################
 
@@ -206,10 +230,14 @@ recons_R = ((RR * WRR) + (GR * WGR) + (BR * WBR)) / (WRR + WGR + WBR)
 final_image = cv2.merge([recons_B, recons_G, recons_R])
 
 Y, Cb, Cr = cbcr_transform(final_image)
-refCb, refCr = cbcr_transform(img_ref)
+refY, refCb, refCr = cbcr_transform(img_ref)
 
 matched_Cb = match_histograms(image=Cb, reference=refCb, multichannel=False)
 matched_Cr = match_histograms(image=Cr, reference=refCr, multichannel=False)
+
+Y = np.asarray(Y, dtype=np.uint8)
+matched_Cb = np.asarray(matched_Cb, dtype=np.uint8)
+matched_Cr = np.asarray(matched_Cr, dtype=np.uint8)
 
 final_YCbCr = cv2.merge([Y, matched_Cb, matched_Cr])
 final_BGR = cv2.cvtColor(final_YCbCr, cv2.COLOR_YCrCb2BGR)
@@ -220,60 +248,41 @@ final_BGR = cv2.cvtColor(final_YCbCr, cv2.COLOR_YCrCb2BGR)
 
 ############################################################################################################################################
 
+
+
 win_name = 'Original Image'
 cv2.namedWindow(win_name, cv2.WINDOW_NORMAL)
 cv2.moveWindow(win_name, 0, 0)
 cv2.imshow(win_name, img)
-cv2.resizeWindow(win_name, 750, 1000)
+cv2.resizeWindow(win_name, 1920,1080)
 cv2.imshow("Original", img)
 cv2.waitKey(0); cv2.destroyAllWindows()
 cv2.waitKey(1)
 
-win_name = 'NLM Filtered'
-img = cv2.rotate(denoise_img, cv2.ROTATE_90_CLOCKWISE)
-img = cv2.resize(denoise_img,(750,1000))
+
+
+win_name = 'Final YBCR'
+img = cv2.rotate(final_YCbCr, cv2.ROTATE_90_CLOCKWISE)
+img = cv2.resize(final_YCbCr,(1920,1080))
 cv2.namedWindow(win_name, cv2.WINDOW_NORMAL)
 cv2.moveWindow(win_name, 0, 0 )
-cv2.imshow(win_name, denoise_img)
-cv2.resizeWindow(win_name, 750, 1000)
-cv2.imshow("NLM Filtered", denoise_img)
+cv2.imshow(win_name, final_YCbCr)
+cv2.resizeWindow(win_name, 1920,1080)
+cv2.imshow("Final YBCR", final_YCbCr)
 cv2.waitKey(0); cv2.destroyAllWindows()
 cv2.waitKey(1)
 
-win_name = 'HM'
-img = cv2.rotate(matched, cv2.ROTATE_90_CLOCKWISE)
-img = cv2.resize(matched,(750,1000))
+win_name = 'FINAL BGR'
+img = cv2.rotate(final_BGR , cv2.ROTATE_90_CLOCKWISE)
+img = cv2.resize(final_BGR ,(750,1000))
 cv2.namedWindow(win_name, cv2.WINDOW_NORMAL)
 cv2.moveWindow(win_name, 0, 0 )
-cv2.imshow(win_name, matched)
-cv2.resizeWindow(win_name, 750, 1000)
-cv2.imshow("HM", matched)
+cv2.imshow(win_name, final_BGR )
+cv2.resizeWindow(win_name, 1920,1080)
+cv2.imshow("FINAL RGB", final_BGR )
 cv2.waitKey(0); cv2.destroyAllWindows()
 cv2.waitKey(1)
-
-win_name = 'Blue Channel Matched'
-img = cv2.rotate(out_refb, cv2.ROTATE_90_CLOCKWISE)
-img = cv2.resize(out_refb,(750,1000))
-cv2.namedWindow(win_name, cv2.WINDOW_NORMAL)
-cv2.moveWindow(win_name, 0, 0 )
-cv2.imshow(win_name, out_refb)
-cv2.resizeWindow(win_name, 750, 1000)
-cv2.imshow("Blue Channel Matched", out_refb)
-cv2.waitKey(0); cv2.destroyAllWindows()
-cv2.waitKey(1)
-
-
-win_name = 'Blue Channel Well Exposedness'
-img = cv2.rotate(b, cv2.ROTATE_90_CLOCKWISE)
-img = cv2.resize(b,(750,1000))
-cv2.namedWindow(win_name, cv2.WINDOW_NORMAL)
-cv2.moveWindow(win_name, 0, 0 )
-cv2.imshow(win_name, b)
-cv2.resizeWindow(win_name, 750, 1000)
-cv2.imshow("Blue Channel Matched", b)
-cv2.waitKey(0); cv2.destroyAllWindows()
-cv2.waitKey(1)
-
+ 
 
    
    
