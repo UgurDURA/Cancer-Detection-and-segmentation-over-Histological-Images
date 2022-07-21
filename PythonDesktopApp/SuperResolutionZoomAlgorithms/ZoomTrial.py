@@ -38,21 +38,55 @@ plt.show()
 ###################################################################################################################################################
                                             #ESPCN SuperResolution
 ###################################################################################################################################################
+
+# sr = cv2.dnn_superres.DnnSuperResImpl_create()
+
+# path = "SuperResolutionZoomAlgorithms/ESPCN_x3.pb"
+
+# sr.readModel(path)
+
+# sr.setModel("espcn",3)
+
+# result = sr.upsample(img)
+
+# # Resized image
+# resized = cv2.resize(img,dsize=None,fx=3,fy=3)
+
+
+###################################################################################################################################################
+                                            #FRCNN SuperResolution (3X)
+###################################################################################################################################################
+
+# sr = cv2.dnn_superres.DnnSuperResImpl_create()
+
+# path = "SuperResolutionZoomAlgorithms/FSRCNN_x3.pb"
+
+# sr.readModel(path)
+
+# sr.setModel("fsrcnn",3)
+
+# result = sr.upsample(img)
+
+# # Resized image
+# resized = cv2.resize(img,dsize=None,fx=3,fy=3)
+
+
+###################################################################################################################################################
+                                            #FRCNN SuperResolution (3X_Small)
+###################################################################################################################################################
+
 sr = cv2.dnn_superres.DnnSuperResImpl_create()
 
-path = "SuperResolutionZoomAlgorithms/ESPCN_x3.pb"
+path = "SuperResolutionZoomAlgorithms/FSRCNN-small_x3.pb"
 
 sr.readModel(path)
 
-sr.setModel("espcn",3)
+sr.setModel("fsrcnn",3)
 
 result = sr.upsample(img)
 
 # Resized image
 resized = cv2.resize(img,dsize=None,fx=3,fy=3)
-
-
-
 
 
 
