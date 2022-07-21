@@ -168,6 +168,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 //                values[4] = 10;
 //                values[5] = 12;
 
+
+
                 sendImage.execute(bytes);
 
 //            } catch (IOException e) {
@@ -461,7 +463,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             mImageReader.setOnImageAvailableListener(mOnImageAvailableListener, mBackgroundHandler);
             mPreviewSize = optimalSize(map.getOutputSizes(SurfaceTexture.class), width, height);
 
-            mcameraID = "0"; //Manually provided camera ID
+            mcameraID = "4"; //Manually provided camera ID
 
             mCameraCharacteristics = cameraCharacteristics;
 
@@ -637,7 +639,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         bRecording = findViewById(R.id.bRecord);
         nameText = findViewById(R.id.logView);
         bSend = findViewById(R.id.bSend);
-        sendText = (EditText) findViewById(R.id.textMessage);
         ipText = (TextView) findViewById(R.id.ipText);
         bRaw = findViewById(R.id.bRaw);
 
@@ -653,7 +654,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
              public void onClick(View arg0) {
                 SocketToPc send = new SocketToPc();
 
-                send.execute(sendText.getText().toString());
+                    send.execute(sendText.getText().toString());
+
+
+
 
 ////                sendImage send2 = new sendImage();
 ////
@@ -928,6 +932,23 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         }
     }
 
+    private static Boolean contains(int[] modes, int mode)
+    {
+        if (modes == null )
+        {
+            return false;
+        }
+        for(int i : modes)
+        {
+            if(i == mode)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
 
     class SocketToPc extends AsyncTask <String, Void, String>
     {
@@ -946,7 +967,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
             try
             {
-                msocket = new Socket("192.168.2.164",5555);
+                msocket = new Socket("192.168.1.4",5555);
                 minputStreamReader = new InputStreamReader(msocket.getInputStream());
                 mBufferReader = new BufferedReader(minputStreamReader);
 
@@ -993,7 +1014,7 @@ class SendImage extends AsyncTask<byte[],Void,Void> {
 
     @Override
     protected Void doInBackground(byte[]... voids) {
-        String address = "192.168.2.164";
+        String address = "192.168.1.6";
         int port = 5555;
         byte[] array = voids[0];
 //        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
@@ -1035,6 +1056,7 @@ class SendImage extends AsyncTask<byte[],Void,Void> {
 
             out.close();
             socket.close();
+
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -1121,6 +1143,12 @@ class SendImage extends AsyncTask<byte[],Void,Void> {
 
 
 
+
+
+
+
+
+
     public void log(String text)
     {
         logList.add(text);
@@ -1140,3 +1168,4 @@ class SendImage extends AsyncTask<byte[],Void,Void> {
 
     }
 }
+
