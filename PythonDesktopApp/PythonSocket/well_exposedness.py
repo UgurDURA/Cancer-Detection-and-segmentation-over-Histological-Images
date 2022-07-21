@@ -1,9 +1,13 @@
+from cmath import exp
 import math
 
 import numpy as np
 
 
 def well_exposedness(image):
+
+
+    
     im_b = image[:, :, 0]  # get b channel
     im_g = image[:, :, 1]  # get g channel
     im_r = image[:, :, 2]  # get r channel
@@ -16,9 +20,9 @@ def well_exposedness(image):
     std_im_g = np.std(im_g)
     std_im_r = np.std(im_r)
 
-    result_b = math.exp(- (im_b - np.power((1 - m_im_b), 2)) / (2 * (std_im_b ^ 2)))
-    result_g = math.exp(- (im_g - np.power((1 - m_im_g), 2)) / (2 * (std_im_g ^ 2)))
-    result_r = math.exp(- (im_r - np.power((1 - m_im_r), 2)) / (2 * (std_im_r ^ 2)))
+    result_b = np.exp(1- (im_b - np.power((1 - m_im_b), 2)) / (2 * (std_im_b ** 2)))
+    result_g = np.exp(1- (im_g - np.power((1 - m_im_g), 2)) / (2 * (std_im_g ** 2)))
+    result_r = np.exp(1- (im_r - np.power((1 - m_im_r), 2)) / (2 * (std_im_r ** 2)))
 
     b = result_b
     g = result_g
