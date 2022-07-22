@@ -1014,7 +1014,7 @@ class SendImage extends AsyncTask<byte[],Void,Void> {
 
     @Override
     protected Void doInBackground(byte[]... voids) {
-        String address = "192.168.1.6";
+        String address = "192.168.1.10";
         int port = 5555;
         byte[] array = voids[0];
 //        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
