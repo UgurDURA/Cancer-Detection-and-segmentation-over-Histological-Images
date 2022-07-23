@@ -31,6 +31,7 @@ import math
 
 from tkinter import *
 from PIL import ImageTk, Image
+from tkinter.filedialog import asksaveasfile
 
 
 HOST = "192.168.1.10"
@@ -73,19 +74,14 @@ while True:
     print('Packet Received')
  
     imgReceived= Image.open(io.BytesIO(data))
-    img = imgReceived.save("SendImage.png")
     # opencvImage = cv2.imread("SendImage.png")
     opencvImage = cv2.cvtColor(np.array(imgReceived), cv2.COLOR_RGB2BGR)
-    opencvImage = cv2.rotate(opencvImage, cv2.ROTATE_90_CLOCKWISE)
-    opencvImage = cv2.resize(opencvImage,(1920,1080))
+    # opencvImage = cv2.rotate(opencvImage, cv2.ROTATE_90_CLOCKWISE)
+    opencvImage = cv2.resize(opencvImage,(1080,1920))
+    cv2.imwrite("ReceivedImage/SendImage.png",opencvImage)
     height, width, channels = opencvImage.shape 
 
-    def concat_tile(im_list_2d):
-        return cv2.vconcat([cv2.hconcat(im_list_h) for im_list_h in im_list_2d])
-
-    
-    
-
+  
     sr = cv2.dnn_superres.DnnSuperResImpl_create()
 
     path = "SuperResolutionZoomAlgorithms/FSRCNN_x3.pb"
@@ -175,7 +171,7 @@ while True:
             self.imscale=1.0
             #self.imscale = 1+(1*int(data[0])/100)  # scale for the canvas image zoom, public for outer classes
             self.__delta = 1.3 # zoom magnitude
-            self.__filter = Image.ANTIALIAS # could be: NEAREST, BILINEAR, BICUBIC and ANTIALIAS
+            # self.__filter = Image.ANTIALIAS # could be: NEAREST, BILINEAR, BICUBIC and ANTIALIAS
             self.__previous_state = 0  # previous state of the keyboard
             self.path = path  # path to the image, should be public for outer classes
             # Create ImageFrame in placeholder widget
@@ -250,7 +246,7 @@ while True:
             while w > 512 and h > 512:  # top pyramid image is around 512 pixels in size
                 w /= self.__reduction  # divide on reduction degree
                 h /= self.__reduction  # divide on reduction degree
-                self.__pyramid.append(self.__pyramid[-1].resize((int(w), int(h)), self.__filter))
+                self.__pyramid.append(self.__pyramid[-1].resize((int(w), int(h))))
             # Put image into container rectangle and use it to set proper coordinates to the image
             self.container = self.canvas.create_rectangle((0, 0, self.imwidth, self.imheight), width=0)
             self.__show_image()  # show image on the canvas
@@ -286,7 +282,7 @@ while True:
                 self.__image.size = (self.imwidth, band)  # set size of the tile band
                 self.__image.tile = [self.__tile]  # set tile
                 cropped = self.__image.crop((0, 0, self.imwidth, band))  # crop tile band
-                image.paste(cropped.resize((w, int(band * k)+1), self.__filter), (0, int(i * k)))
+                image.paste(cropped.resize((w, int(band * k)+1)), (0, int(i * k)))
                 i += band
                 j += 1
             print('\r' + 30*' ' + '\r', end='')  # hide printed string
@@ -363,7 +359,7 @@ while True:
                                         (int(x1 / self.__scale), int(y1 / self.__scale),
                                         int(x2 / self.__scale), int(y2 / self.__scale)))
                 #
-                imagetk = ImageTk.PhotoImage(image.resize((int(x2 - x1), int(y2 - y1)), self.__filter))
+                imagetk = ImageTk.PhotoImage(image.resize((int(x2 - x1), int(y2 - y1))))
                 imageid = self.canvas.create_image(max(box_canvas[0], box_img_int[0]),
                                                 max(box_canvas[1], box_img_int[1]),
                                                 anchor='nw', image=imagetk)
@@ -548,6 +544,7 @@ while True:
     
 
     class MainWindow(ttk.Frame):
+
         """ Main window class """
         def __init__(self, mainframe, path):
             """ Initialize the main Frame """
@@ -569,15 +566,29 @@ while True:
                 )).save(file_name)
         
             def capture():
+
+                sr = cv2.dnn_superres.DnnSuperResImpl_create()
+
+                path = "SuperResolutionZoomAlgorithms/FSRCNN_x3.pb"
+
+                sr.readModel(path)
+
+                sr.setModel("fsrcnn",3)
                 ttk.Frame.__init__(self, master=mainframe)
                 save_widget_as_image(self.master, "CapturedImage.png")
                 img = cv2.imread("CapturedImage.png")
-                print(img.shape)
-                img = img[0:1024, 0:1360]
-                print(img.shape)
-                plt.imshow(img[:,:,::-1])
-                plt.show()
                 
+                ZoomedImage = img[0:1024, 0:1360]
+                result = sr.upsample(ZoomedImage)
+        
+                cv2.imwrite("ZoomedImageResult/zoomedResult.png", result)
+                Result = Image.open("ZoomedImageResult/zoomedResult.png")
+                file = filedialog.asksaveasfile(mode='w', defaultextension=".png", filetypes=(("PNG file", "*.png"),("All Files", "*.*") ))
+                if file:
+                    abs_path = os.path.abspath(file.name)
+                    out = Result
+                    out.save(abs_path)
+            
                 
             e=tk.Button(self.master,text="Capture",command=capture,height=3,width=10)
             e.grid(row=1, column=0)
@@ -592,12 +603,6 @@ while True:
     app = MainWindow(tk.Tk(), path="SuperResolutionResult.png")
 
     app.mainloop()
-
-  
-    
-    
-
-    
 
     client.close()
     break
