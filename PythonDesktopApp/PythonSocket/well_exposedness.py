@@ -28,6 +28,13 @@ def well_exposedness(image):
     g = 1-result_g
     r = 1-result_r
 
+    print("Well Exposedness Normalization Results --------------->>>>>>>>")
+    print(np.max(b))
+    print(np.max(g))
+    print(np.max(r))
+    
+
+
     return b, g, r
 
 # WE Maps

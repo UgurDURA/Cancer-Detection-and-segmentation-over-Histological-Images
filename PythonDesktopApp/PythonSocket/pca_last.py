@@ -35,11 +35,25 @@ def pca_weight_char(image):
         p = np.reshape(weights[i], [height, width])  # reshape each channel
         PCA_Weights[:, :, i] =(p - np.min(p))/np.ptp(p)
 
-    for i in range(0, channels):
-        PCA_Weights[:, :, i] = cv2.GaussianBlur(PCA_Weights[:, :, i], (5,5), cv2.BORDER_DEFAULT)
+    min_range = 0.85
+    max_range = 1
+
+    for a in range(0, channels):
+        # PCA_Weights[:, :, i] = cv2.GaussianBlur(PCA_Weights[:, :, i], (5,5), cv2.BORDER_DEFAULT)
+        for i in range(0, height):
+            for j in range(0, width):
+                if PCA_Weights[i,j,a]>min_range and PCA_Weights[i,j,a]<max_range:
+                    PCA_Weights[i,j,a] = 1
+
+    
     
     return PCA_Weights[:, :, 0], PCA_Weights[:, :, 1], PCA_Weights[:, :, 2]
 
 
     print(PCA_Weights)
     print("PCA Weight Shape", PCA_Weights.shape())
+
+
+    row, column = img.shape
+
+ 

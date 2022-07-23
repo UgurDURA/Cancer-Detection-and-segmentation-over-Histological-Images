@@ -1,10 +1,33 @@
+import imp
+from traceback import print_tb
+from cbcr import cbcr_transform
+from well_exposedness import well_exposedness
+from saturation import saturation
+
+import matplotlib.pyplot as plt
+import pca_last
+
+from skimage.restoration import denoise_nl_means, estimate_sigma
+from skimage.exposure import match_histograms
+from sklearn.decomposition import PCA
+import non_local_means_filter
+import histogram_matching
+import math
+import numpy as np
+import cv2 as cv2
+
+
+
+
+
+
 ############################################################################################################################################
 
                                                                             #Receive the input
                                                                             
 ############################################################################################################################################
 
-img = cv2.imread("SuperResolutionResult.png")
+img = cv2.imread("Kidney.jpeg")
 img_ref = cv2.imread("Kidney_000_Mıcroscope_4x_1.09_HuwDevıce.png")
 
 ############################################################################################################################################
@@ -51,7 +74,27 @@ RR = match_histograms(image=R, reference=R, multichannel=False)  # Red matched w
 out_refb = cv2.merge([BB, GB, RB])
 out_refg = cv2.merge([BG, GG, RG])
 out_refr = cv2.merge([BR, GR, RR])
+
+
 print(BB.shape)
+
+############################################################################################################################################
+
+                                                                    #Normalization [1 0 ]
+
+############################################################################################################################################
+
+
+out_refb = np.float_(out_refb - np.min(out_refb))/ np.float_(np.max(out_refb)-np.min(out_refb))
+out_refg = np.float_(out_refg - np.min(out_refg))/ np.float_(np.max(out_refg)-np.min(out_refg))
+out_refr = np.float_(out_refr - np.min(out_refr))/ np.float_(np.max(out_refr)-np.min(out_refr))
+
+
+print("-------------------------Normalization Results----------->>>>>>>>")
+print(np.max(out_refb))
+print(np.max(out_refg))
+print(np.max(out_refr))
+
 
 
 ############################################################################################################################################
@@ -59,7 +102,6 @@ print(BB.shape)
                                                                 #PCA Map Extraction
 
 ############################################################################################################################################
-
 
 PBB, PBG, PBR = pca_last.pca_weight_char(out_refb)
 PGB, PGG, PGR = pca_last.pca_weight_char(out_refg)
@@ -88,7 +130,7 @@ EBB, EBG, EBR = well_exposedness(out_refb)
 EGB, EGG, EGR = well_exposedness(out_refg)
 ERB, ERG, ERR = well_exposedness(out_refr)
 
-print(EGG.max())
+print("Well Exposedness EGG Max Value-------->>>>>>",np.max(EGG))
 
 win_name = 'Well Exposedness Green'
 cv2.namedWindow(win_name, cv2.WINDOW_NORMAL)
@@ -106,9 +148,12 @@ cv2.waitKey(1)
 ############################################################################################################################################
 
 
-DBB, DBG, DBR = well_exposedness(out_refb)
-DGB, DGG, DGR = well_exposedness(out_refg)
-DRB, DRG, DRR = well_exposedness(out_refr)
+DBB, DBG, DBR = saturation(out_refb)
+DGB, DGG, DGR = saturation(out_refg)
+DRB, DRG, DRR = saturation(out_refr)
+
+
+print("Brightness DGG Max Value-------->>>>>>",np.max(DGG))
 
 
 win_name = 'Brigtness Green'
@@ -116,7 +161,7 @@ cv2.namedWindow(win_name, cv2.WINDOW_NORMAL)
 cv2.moveWindow(win_name, 0, 0)
 cv2.imshow(win_name, DGG)
 cv2.resizeWindow(win_name, 1920,1080)
-cv2.imshow("Brightness Exposedness Green", DGG)
+cv2.imshow("Brightness Green", DGG)
 cv2.waitKey(0); cv2.destroyAllWindows()
 cv2.waitKey(1)
 
@@ -126,17 +171,37 @@ cv2.waitKey(1)
 
 ############################################################################################################################################
 
-WBB = cv2.Laplacian((PBB * EBB * DBB), cv2.CV_64F)
-WGB = cv2.Laplacian((PGB * EGB * DBB), cv2.CV_64F)
-WRB = cv2.Laplacian((PRB * ERB * DRB), cv2.CV_64F)
+WBB = cv2.Laplacian((PBB * EBB ), cv2.CV_64F)
+WGB = cv2.Laplacian((PGB * EGB ), cv2.CV_64F)
+WRB = cv2.Laplacian((PRB * ERB), cv2.CV_64F)
 
-WBG = cv2.Laplacian((PBG * EBG * DBG), cv2.CV_64F)
-WGG = cv2.Laplacian((PGG * EGG * DGG), cv2.CV_64F)
-WRG = cv2.Laplacian((PRG * ERG * DRG), cv2.CV_64F)
+WBG = cv2.Laplacian((PBG * EBG), cv2.CV_64F)
+WGG = cv2.Laplacian((PGG * EGG ), cv2.CV_64F)
+WRG = cv2.Laplacian((PRG * ERG ), cv2.CV_64F)
 
-WBR = cv2.Laplacian((PBR * EBR * DBR), cv2.CV_64F)
-WGR = cv2.Laplacian((PGR * EGR * DGR), cv2.CV_64F)
-WRR = cv2.Laplacian((PRR * ERR * DRR), cv2.CV_64F)
+WBR = cv2.Laplacian((PBR * EBR ), cv2.CV_64F)
+WGR = cv2.Laplacian((PGR * EGR), cv2.CV_64F)
+WRR = cv2.Laplacian((PRR * ERR ), cv2.CV_64F)
+
+############################################################################################################################################
+
+                                                                #Weight Normalization
+
+############################################################################################################################################
+
+
+WBB = np.float_(WBB - np.min(WBB))/ np.float_(np.max(WBB)-np.min(WBB))
+WGB  = np.float_(WGB  - np.min(WGB ))/ np.float_(np.max(WGB )-np.min(WGB ))
+WRB = np.float_(WRB - np.min(WRB))/ np.float_(np.max(WRB)-np.min(WRB))
+
+WBG = np.float_(WBG - np.min(WBG))/ np.float_(np.max(WBG)-np.min(WBG))
+WGG  = np.float_(WGG  - np.min(WGG ))/ np.float_(np.max(WGG )-np.min(WGG))
+WRG = np.float_(WRG - np.min(WRG))/ np.float_(np.max(WRG)-np.min(WRG))
+
+WBR = np.float_(WBR - np.min(WBR))/ np.float_(np.max(WBR)-np.min(WBR))
+WGR  = np.float_(WGR - np.min(WGR ))/ np.float_(np.max(WGR )-np.min(WGR))
+WRR = np.float_(WRR - np.min(WRR))/ np.float_(np.max(WRR)-np.min(WRR))
+
 
 ############################################################################################################################################
 
@@ -144,11 +209,22 @@ WRR = cv2.Laplacian((PRR * ERR * DRR), cv2.CV_64F)
 
 ############################################################################################################################################
 
-recons_B = ((RB * WRB) + (GB * WGB) + (BB * WBB)) / (WRB + WGB + WBB)
-recons_G = ((RG * WRG) + (GG * WGG) + (BG * WBG)) / (WRG + WGG + WBG)
-recons_R = ((RR * WRR) + (GR * WGR) + (BR * WBR)) / (WRR + WGR + WBR)
+recons_B = cv2.divide ((cv2.multiply(RB,WRB) + cv2.multiply(GB,WGB) + cv2.multiply(BB,WBB)), (WRB + WGB + WBB))  
+recons_G = cv2.divide ((cv2.multiply(RG,WRG) + cv2.multiply(GG,WGG) + cv2.multiply(BG,WBG)),(WRG + WGG + WBG))
+recons_R = cv2.divide ((cv2.multiply(RR,WRR) + cv2.multiply(GR,WGR) + cv2.multiply(BR,WBR)),(WRR + WGR + WBR))
+
+recons_B = recons_B / np.max(recons_B)
+recons_B = np.int_(recons_B * 255)
+
+recons_G = recons_G / np.max(recons_G)
+recons_G = np.int_(recons_G * 255)
+
+recons_R = recons_R / np.max(recons_R)
+recons_R = np.int_(recons_R * 255)
+
 
 final_image = cv2.merge([recons_B, recons_G, recons_R])
+
 
 Y, Cb, Cr = cbcr_transform(final_image)
 refY, refCb, refCr = cbcr_transform(img_ref)
